@@ -1,0 +1,43 @@
+<project name="atomicannotation" basedir="." default="main">
+	<property name="src.dir"      value="src/main/java"/>
+	<property name="build.dir"    value="build"/>
+	<property name="libs.dir"     value="libs"/>
+	<property name="dist.version" value="1.0-SNAPSHOT"/>
+	<property name="dist.dir"     value="target"/>
+	<property name="jar.file"     value="${dist.dir}/atomicannotation-${dist.version}.jar"/>
+
+	<path id="jars-classpath">
+		<pathelement path="${build.dir}"/>
+		<fileset dir="${libs.dir}" >
+			<include name="*.jar"/>
+		</fileset>
+	</path>
+
+	<target name="clean">
+		<delete dir="${build.dir}"/>
+		<delete dir="${dist.dir}"/>
+	</target>
+
+	<target name="compile">
+		<mkdir dir="${build.dir}"/>
+		<!-- Compile sources -->
+		<javac srcdir="${src.dir}" destdir="${build.dir}" debug="true" deprecation="true"
+			debuglevel="lines,vars,source" includeantruntime="false">
+			<compilerarg value="-Xlint:unchecked"/>
+			<classpath refid="jars-classpath"/>
+		</javac>
+		<!-- Generate the Atomic Instance -->
+		<java classname="pt.ist.esw.atomicannotation.GenerateAtomicInstance" fork="true">
+			<arg value="${build.dir}"/>
+			<classpath refid="jars-classpath"/>
+		</java>
+	</target>
+	<target name="build" depends="compile"/> <!-- alias -->
+
+	<target name="jar" depends="compile">
+		<mkdir dir="${dist.dir}"/>
+		<jar destfile="${jar.file}" basedir="${build.dir}"/>
+	</target>
+
+	<target name="main" depends="clean,compile,jar"/>
+</project>
