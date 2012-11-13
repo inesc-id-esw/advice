@@ -26,9 +26,8 @@
 package pt.ist.esw.atomicannotation;
 
 public abstract class ContextFactory {
-
+    /** ContextFactories must override this method **/
     public static AtomicContext newContext(Atomic atomic) {
         throw new RuntimeException("ContextFactories must override this method.");
     }
-
 }

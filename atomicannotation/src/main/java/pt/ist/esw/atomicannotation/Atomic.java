@@ -27,14 +27,13 @@ package pt.ist.esw.atomicannotation;
 
 import java.lang.annotation.*;
 
-// Unfortunately, we cannot have "null" as a default value for the contextFactory parameter,
-// and instead we employ this class as a marker to substitute for it.
-final class NullContextFactory extends ContextFactory {
-    private NullContextFactory() { }
-};
-
 @Target(ElementType.METHOD)
 public @interface Atomic {
+    /** Default ContextFactory used, when none is specified in the annotation.
+      * It is recommended that atomicannotation clients provide this class.
+      **/
+    static final String DEFAULT_CONTEXT_FACTORY = "pt.ist.esw.atomicannotation.userimpl.DefaultAtomicContext";
+
     boolean readOnly() default false;
     boolean canFail()  default true;
     boolean speculativeReadOnly() default true;
