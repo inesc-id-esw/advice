@@ -28,10 +28,10 @@ package pt.ist.esw.atomicannotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-/* Implements the default strategy of delegating Context creation to the class named in
- * Atomic.DEFAULT_CONTEXT_FACTORY.
- */
-final class NullContextFactory extends ContextFactory {
+/** Implements the default strategy of delegating Context creation to the class named in
+  * Atomic.DEFAULT_CONTEXT_FACTORY.
+  **/
+public final class NullContextFactory extends ContextFactory {
     private NullContextFactory() { }
 
     public static AtomicContext newContext(Atomic atomic) {
