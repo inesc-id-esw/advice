@@ -32,7 +32,7 @@ public @interface Atomic {
     /** Default ContextFactory used, when none is specified in the annotation.
       * It is recommended that atomicannotation clients provide this class.
       **/
-    static final String DEFAULT_CONTEXT_FACTORY = "pt.ist.esw.atomicannotation.userimpl.DefaultAtomicContext";
+    static final String DEFAULT_CONTEXT_FACTORY = "pt.ist.esw.atomicannotation.userimpl.DefaultContextFactory";
 
     boolean readOnly() default false;
     boolean canFail()  default true;
