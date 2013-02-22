@@ -70,10 +70,13 @@ public class ProcessAtomicAnnotations {
     private String[] files;
 
     public ProcessAtomicAnnotations(String[] files) {
+        if (files.length == 0) {
+            throw new IllegalArgumentException("No files to process");
+        }
         this.files = files;
     }
 
-    public static void main (final String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
         new ProcessAtomicAnnotations(args).process();
     }
 
@@ -215,13 +218,14 @@ public class ProcessAtomicAnnotations {
         }
 
         /**
-          * To transactify a method, considering that the original method was
-          * "@Atomic @SomethingElse long add(Object o, int i)", and part of the class "Xpto",
+          * To transactify method add, part of the class Xpto, and with signature
+          * @Atomic @SomethingElse public long add(Object o, int i)
           * we generate the following code:
+          *
           * public static [final] AtomicContext context$add = AtomicContext.newContext();
           *
           * @SomethingElse
-          * long add(Object o, int i) {
+          * public long add(Object o, int i) {
           *     static final class atomicannotation$callable$add implements Callable {
           *         Xpto arg0;
           *         Object arg1;
@@ -233,16 +237,17 @@ public class ProcessAtomicAnnotations {
           *             this.arg2 = arg2;
           *         }
           *
-          *         Object call() {
-          *             return arg0.atomic$add(arg1, arg2);
+          *         public Object call() {
+          *             return Xpto.atomic$add(arg0, arg1, arg2);
           *         }
           *     }
           *     return context$add.doTransactionally(new atomicannotation$callable$add(this, o, i));
           * }
           *
-          * long atomic$add(Object o, int i) {
+          * synthetic static long atomic$add(Xpto this, Object o, int i) {
           *     // original method
           * }
+          *
           * Note that any annotations from the original method are removed from the atomic$ version.
           **/
         private void transactify(MethodNode mn, AnnotationNode atomicAnnotation) {
@@ -268,14 +273,8 @@ public class ProcessAtomicAnnotations {
                 }
             }
 
-            // Generate replacement method
-            generateMethodCode(mn, atomicMethod, fieldName, callableClass);
-
             // Create field to save context
             cv.visitField(ACC_PUBLIC | ACC_STATIC | ACC_FINAL, fieldName, ATOMIC_CONTEXT.getDescriptor(), null, null);
-
-            // Generate callable class
-            generateCallable(callableClass, mn);
 
             // Add code to clinit to initialize the field
             // Add default parameters from @Atomic
@@ -299,13 +298,34 @@ public class ProcessAtomicAnnotations {
             atomicClInit.visitMethodInsn(INVOKESTATIC, ((Type) atomicElements.get("contextFactory")).getInternalName(), "newContext", "(" + ATOMIC.getDescriptor() + ")" + ATOMIC_CONTEXT.getDescriptor());
             atomicClInit.visitFieldInsn(PUTSTATIC, className, fieldName, ATOMIC_CONTEXT.getDescriptor());
 
+            // Repurpose original method
+            modifyOriginalMethod(mn);
+
+            // Generate replacement method
+            generateMethodCode(mn, atomicMethod, fieldName, callableClass);
+
+            // Generate callable class
+            generateCallable(callableClass, mn);
+        }
+
+        private void modifyOriginalMethod(MethodNode mn) {
             // Rename original method
             mn.name = "atomic$" + mn.name;
             // Remove annotations from original method
             mn.invisibleAnnotations = Collections.<AnnotationNode>emptyList();
             mn.visibleAnnotations = Collections.<AnnotationNode>emptyList();
-            // If the method was private, it now becomes package protected, the callable can access it
-            mn.access &= ~ACC_PRIVATE;
+            // Modify the access flags, setting the method as package protected, so that the callable can access it
+            mn.access &= ~ACC_PRIVATE & ~ACC_PUBLIC;
+            // Also mark it as synthetic, so Java tools ignore it
+            mn.access |= ACC_SYNTHETIC;
+
+            if (!isStatic(mn)) {
+                // Convert original method to static method with instance as first argument
+                // Note that the bytecode is still valid, as ALOAD 0 (an access to this) will still have
+                // the same semantics
+                mn.access |= ACC_STATIC;
+                mn.desc = "(L" + className + ";" + mn.desc.substring(1);
+            }
         }
 
         private void generateMethodCode(MethodNode mn, MethodVisitor mv, String fieldName, String callableClass) {
@@ -316,7 +336,6 @@ public class ProcessAtomicAnnotations {
 
             int pos = 0;
             // Push arguments for original method on the stack
-            if (!isStatic(mn)) mv.visitVarInsn(ALOAD, pos++);
             for (Type t : Type.getArgumentTypes(mn.desc)) {
                 mv.visitVarInsn(t.getOpcode(ILOAD), pos);
                 pos += t.getSize();
@@ -343,11 +362,7 @@ public class ProcessAtomicAnnotations {
         }
 
         private String getCallableCtorDesc(MethodNode mn) {
-            List<Type> callableCtorDescList = new ArrayList<Type>();
-            if (!isStatic(mn)) callableCtorDescList.add(Type.getObjectType(className));
-            callableCtorDescList.addAll(Arrays.asList(Type.getArgumentTypes(mn.desc)));
-            String callableCtorDesc = Type.getMethodDescriptor(Type.VOID_TYPE, callableCtorDescList.toArray(new Type[0]));
-            return callableCtorDesc;
+            return mn.desc.substring(0, mn.desc.indexOf(')') + 1) + 'V';
         }
 
         private String getMethodName(String methodName) {
@@ -365,8 +380,7 @@ public class ProcessAtomicAnnotations {
         private void generateCallable(String callableClass, MethodNode mn) {
             Type returnType = Type.getReturnType(mn.desc);
 
-            List<Type> arguments = new ArrayList<Type>(Arrays.asList(Type.getArgumentTypes(mn.desc)));
-            if (!isStatic(mn)) arguments.add(0, Type.getObjectType(className));
+            Type[] arguments = Type.getArgumentTypes(mn.desc);
 
             ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
             cw.visit(V1_6, ACC_FINAL, callableClass, "Ljava/lang/Object;Ljava/util/concurrent/Callable<" +
@@ -415,7 +429,7 @@ public class ProcessAtomicAnnotations {
                         mv.visitVarInsn(ALOAD, 0);
                         mv.visitFieldInsn(GETFIELD, callableClass, "arg" + fieldPos++, t.getDescriptor());
                 }
-                mv.visitMethodInsn(isStatic(mn) ? INVOKESTATIC : INVOKEVIRTUAL, className, "atomic$" + mn.name, mn.desc);
+                mv.visitMethodInsn(INVOKESTATIC, className, mn.name, mn.desc);
                 if (returnType.equals(Type.VOID_TYPE)) mv.visitInsn(ACONST_NULL);
                 else if (isPrimitive(returnType)) boxWrap(returnType, mv);
                 mv.visitInsn(ARETURN);
