@@ -27,6 +27,7 @@ package pt.ist.esw.atomicannotation;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.IOException;
 import static java.io.File.separatorChar;
 
@@ -36,7 +37,11 @@ import static org.objectweb.asm.Opcodes.*;
 
 public final class GenerateAtomicInstance {
 
-    public static final String ATOMIC_INSTANCE = "pt/ist/esw/atomicannotation/AtomicInstance";
+    private static final String ATOMIC_SLASH_PREFIX = "pt/ist/esw/atomicannotation/";
+    private static final String ATOMIC_INSTANCE_SLASH_PREFIX = ATOMIC_SLASH_PREFIX;
+
+    public static final String ATOMIC = ATOMIC_SLASH_PREFIX + "Atomic";
+    public static final String ATOMIC_INSTANCE = ATOMIC_INSTANCE_SLASH_PREFIX + "AtomicInstance";
 
     private GenerateAtomicInstance() { }
 
@@ -45,14 +50,18 @@ public final class GenerateAtomicInstance {
             System.err.println("Syntax: GenerateAtomicInstance <save-path>");
             System.exit(-1);
         }
-        ClassReader cr = new ClassReader(Atomic.class.getName());
+        start(new File(args[0]));
+    }
+
+    public static void start(File buildDir) throws IOException {
+        InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(ATOMIC + ".class");
+        ClassReader cr = new ClassReader(is);
         ClassNode cNode = new ClassNode();
         cr.accept(cNode, 0);
 
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        cw.visit(V1_6, ACC_PUBLIC | ACC_FINAL, ATOMIC_INSTANCE, null, "java/lang/Object",
-            new String[] { Atomic.class.getName().replace('.', '/') });
-        cw.visitSource("JVSTM Atomic Instance Class", null);
+        cw.visit(V1_6, ACC_PUBLIC | ACC_FINAL, ATOMIC_INSTANCE, null, "java/lang/Object", new String[] { ATOMIC });
+        cw.visitSource("Atomic Instance Class", null);
 
         // Generate fields
         for (MethodNode annotationElems : cNode.methods) {
@@ -107,7 +116,12 @@ public final class GenerateAtomicInstance {
         // Write Class
         FileOutputStream fos = null;
         try {
-            File f = new File(args[0] + separatorChar + ATOMIC_INSTANCE.replace('/', separatorChar) + ".class");
+            File parentDir = new File(buildDir, ATOMIC_INSTANCE_SLASH_PREFIX.replace('/', separatorChar));
+            if (!parentDir.exists() && !parentDir.mkdirs()) {
+                throw new IOException("Could not create required directory: " + parentDir);
+            }
+
+            File f = new File(parentDir, "AtomicInstance.class");
             fos = new FileOutputStream(f);
             fos.write(cw.toByteArray());
         } finally {
