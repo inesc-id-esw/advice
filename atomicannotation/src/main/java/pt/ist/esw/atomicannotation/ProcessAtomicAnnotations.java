@@ -53,7 +53,9 @@ public class ProcessAtomicAnnotations {
         ATOMIC_ELEMENTS = Collections.unmodifiableMap(atomicElements);
 
         try {
-            ClassReader cr = new ClassReader(ATOMIC_INSTANCE.getClassName());
+            InputStream is = Thread.currentThread().getContextClassLoader()
+                .getResourceAsStream(ATOMIC_INSTANCE.getInternalName() + ".class");
+            ClassReader cr = new ClassReader(is);
             ClassNode cNode = new ClassNode();
             cr.accept(cNode, 0);
             ATOMIC_FIELDS = cNode.fields != null ? cNode.fields : Collections.<FieldNode>emptyList();
@@ -67,22 +69,17 @@ public class ProcessAtomicAnnotations {
         }
     }
 
-    private String[] files;
-
-    public ProcessAtomicAnnotations(String[] files) {
-        if (files.length == 0) {
-            throw new IllegalArgumentException("No files to process");
+    private ProcessAtomicAnnotations() {}
+    
+    public static void main (final String args[]) throws Exception {
+        for (String file : args) {
+            ProcessAtomicAnnotations.processFile(new File(file));
         }
-        this.files = files;
     }
 
-    public static void main(String[] args) throws Exception {
-        new ProcessAtomicAnnotations(args).process();
-    }
-
-    public void process() {
-        for (String file : files) {
-            processFile(new File(file));
+    public static void processFiles(File [] files) {
+        for (File file : files) {
+            processFile(file);
         }
     }
 
@@ -325,7 +322,7 @@ public class ProcessAtomicAnnotations {
                 // the same semantics
                 mn.access |= ACC_STATIC;
                 mn.desc = "(L" + className + ";" + mn.desc.substring(1);
-            }
+        }
         }
 
         private void generateMethodCode(MethodNode mn, MethodVisitor mv, String fieldName, String callableClass) {
