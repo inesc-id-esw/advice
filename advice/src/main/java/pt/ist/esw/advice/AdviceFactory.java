@@ -25,9 +25,11 @@
  */
 package pt.ist.esw.advice;
 
+import java.lang.annotation.Annotation;
+
 public abstract class AdviceFactory {
     /** ContextFactories must override this method **/
-    public static Advice newContext(Atomic atomic) {
+    public static Advice newContext(Annotation atomic) {
         throw new RuntimeException("ContextFactories must override this method.");
     }
 }

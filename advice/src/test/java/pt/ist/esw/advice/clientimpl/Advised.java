@@ -23,13 +23,16 @@
  * 1000 - 029 Lisboa
  * Portugal
  */
-package pt.ist.esw.advice;
+package pt.ist.esw.advice.clientimpl;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 
+import pt.ist.esw.advice.AdviceFactory;
+import pt.ist.esw.advice.NullContextFactory;
+
 @Target(ElementType.METHOD)
-public @interface Atomic {
+public @interface Advised {
     /**
      * Default AdviceFactory used, when none is specified in the annotation.
      * It is recommended that clients provide this class.

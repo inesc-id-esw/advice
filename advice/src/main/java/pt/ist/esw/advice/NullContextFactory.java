@@ -36,7 +36,7 @@ public final class NullContextFactory extends AdviceFactory {
     private NullContextFactory() {
     }
 
-    public static Advice newContext(Atomic atomic) {
+    public static Advice newContext(Annotation atomic) {
         try {
             Class<?> defaultFactory = Class.forName(Atomic.DEFAULT_CONTEXT_FACTORY);
             Method newContext = defaultFactory.getMethod("newContext", Atomic.class);
