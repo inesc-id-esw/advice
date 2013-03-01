@@ -23,27 +23,44 @@
  * 1000 - 029 Lisboa
  * Portugal
  */
-package pt.ist.esw.atomicannotation;
+package pt.ist.esw.advice;
+
+import static java.io.File.separatorChar;
+import static org.objectweb.asm.Opcodes.ACC_FINAL;
+import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ALOAD;
+import static org.objectweb.asm.Opcodes.ARETURN;
+import static org.objectweb.asm.Opcodes.GETFIELD;
+import static org.objectweb.asm.Opcodes.ILOAD;
+import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
+import static org.objectweb.asm.Opcodes.IRETURN;
+import static org.objectweb.asm.Opcodes.PUTFIELD;
+import static org.objectweb.asm.Opcodes.RETURN;
+import static org.objectweb.asm.Opcodes.V1_6;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.io.IOException;
-import static java.io.File.separatorChar;
+import java.io.InputStream;
 
-import org.objectweb.asm.*;
-import org.objectweb.asm.tree.*;
-import static org.objectweb.asm.Opcodes.*;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.MethodNode;
 
 public final class GenerateAtomicInstance {
 
-    private static final String ATOMIC_SLASH_PREFIX = "pt/ist/esw/atomicannotation/";
+    private static final String ATOMIC_SLASH_PREFIX = "pt/ist/esw/advice/";
     private static final String ATOMIC_INSTANCE_SLASH_PREFIX = ATOMIC_SLASH_PREFIX;
 
     public static final String ATOMIC = ATOMIC_SLASH_PREFIX + "Atomic";
     public static final String ATOMIC_INSTANCE = ATOMIC_INSTANCE_SLASH_PREFIX + "AtomicInstance";
 
-    private GenerateAtomicInstance() { }
+    private GenerateAtomicInstance() {
+    }
 
     public static void main(String[] args) throws IOException {
         if (args.length != 1) {
@@ -71,7 +88,9 @@ public final class GenerateAtomicInstance {
         // Generate constructor
         {
             StringBuffer ctorDescriptor = new StringBuffer("(");
-            for (MethodNode annotationElems : cNode.methods) ctorDescriptor.append(getReturnTypeDescriptor(annotationElems));
+            for (MethodNode annotationElems : cNode.methods) {
+                ctorDescriptor.append(getReturnTypeDescriptor(annotationElems));
+            }
             ctorDescriptor.append(")V");
 
             MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", ctorDescriptor.toString(), null, null);
@@ -82,7 +101,7 @@ public final class GenerateAtomicInstance {
             for (MethodNode annotationElems : cNode.methods) {
                 Type t = Type.getReturnType(annotationElems.desc);
                 mv.visitVarInsn(ALOAD, 0);
-                mv.visitVarInsn(t.getOpcode(ILOAD), localsPos+1);
+                mv.visitVarInsn(t.getOpcode(ILOAD), localsPos + 1);
                 mv.visitFieldInsn(PUTFIELD, ATOMIC_INSTANCE, annotationElems.name, t.getDescriptor());
                 localsPos += t.getSize();
             }
@@ -104,8 +123,9 @@ public final class GenerateAtomicInstance {
 
         // Generate annotationType() method
         {
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "annotationType", "()Ljava/lang/Class;",
-                    "()Ljava/lang/Class<+Ljava/lang/annotation/Annotation;>;", null);
+            MethodVisitor mv =
+                    cw.visitMethod(ACC_PUBLIC, "annotationType", "()Ljava/lang/Class;",
+                            "()Ljava/lang/Class<+Ljava/lang/annotation/Annotation;>;", null);
             mv.visitCode();
             mv.visitLdcInsn(Type.getType(Atomic.class));
             mv.visitInsn(ARETURN);
@@ -128,7 +148,8 @@ public final class GenerateAtomicInstance {
             if (fos != null) {
                 try {
                     fos.close();
-                } catch (IOException e) { }
+                } catch (IOException e) {
+                }
             }
         }
     }

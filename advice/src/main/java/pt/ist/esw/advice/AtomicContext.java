@@ -23,11 +23,10 @@
  * 1000 - 029 Lisboa
  * Portugal
  */
-package pt.ist.esw.atomicannotation;
+package pt.ist.esw.advice;
 
-public abstract class ContextFactory {
-    /** ContextFactories must override this method **/
-    public static AtomicContext newContext(Atomic atomic) {
-        throw new RuntimeException("ContextFactories must override this method.");
-    }
+import java.util.concurrent.Callable;
+
+public interface AtomicContext {
+    public <V> V doTransactionally(Callable<V> method) throws Exception;
 }

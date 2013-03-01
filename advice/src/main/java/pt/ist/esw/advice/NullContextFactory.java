@@ -23,7 +23,7 @@
  * 1000 - 029 Lisboa
  * Portugal
  */
-package pt.ist.esw.atomicannotation;
+package pt.ist.esw.advice;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

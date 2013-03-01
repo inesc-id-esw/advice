@@ -23,10 +23,24 @@
  * 1000 - 029 Lisboa
  * Portugal
  */
-package pt.ist.esw.atomicannotation;
+package pt.ist.esw.advice;
 
-import java.util.concurrent.Callable;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
 
-public interface AtomicContext {
-    public <V> V doTransactionally(Callable<V> method) throws Exception;
+@Target(ElementType.METHOD)
+public @interface Atomic {
+    /**
+     * Default ContextFactory used, when none is specified in the annotation.
+     * It is recommended that clients provide this class.
+     **/
+    static final String DEFAULT_CONTEXT_FACTORY = "pt.ist.esw.advice.clientimpl.DefaultContextFactory";
+
+    boolean readOnly() default false;
+
+    boolean canFail() default true;
+
+    boolean speculativeReadOnly() default true;
+
+    Class<? extends ContextFactory> contextFactory() default NullContextFactory.class;
 }
