@@ -1,5 +1,5 @@
 /*
- * AtomicAnnotation
+ * Advice Library
  * Copyright (C) 2012 INESC-ID Software Engineering Group
  * http://www.esw.inesc-id.pt
  *
@@ -23,10 +23,36 @@
  * 1000 - 029 Lisboa
  * Portugal
  */
-package pt.ist.esw.atomicannotation;
+package pt.ist.esw.advice.impl;
 
 import java.util.concurrent.Callable;
 
-public interface AtomicContext {
-    public <V> V doTransactionally(Callable<V> method) throws Exception;
+import pt.ist.esw.advice.Advice;
+import pt.ist.esw.advice.AdviceFactory;
+
+public final class ClientAdviceFactory extends AdviceFactory<Deprecated> {
+
+    public static class MyAdvice implements Advice {
+
+        public <V> V perform(Callable<V> method) throws Exception {
+            method.call();
+            return method.call();
+
+        }
+    }
+
+    private ClientAdviceFactory() {
+    }
+
+    private final static ClientAdviceFactory instance = new ClientAdviceFactory();
+
+    public static AdviceFactory<Deprecated> getInstance() {
+        return instance;
+    }
+
+    @Override
+    public Advice newAdvice(Deprecated annotation) {
+        return new MyAdvice();
+    }
+
 }

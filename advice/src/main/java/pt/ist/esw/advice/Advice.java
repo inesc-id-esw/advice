@@ -1,5 +1,5 @@
 /*
- * AtomicAnnotation
+ * Advice Library
  * Copyright (C) 2012 INESC-ID Software Engineering Group
  * http://www.esw.inesc-id.pt
  *
@@ -23,19 +23,10 @@
  * 1000 - 029 Lisboa
  * Portugal
  */
-package pt.ist.esw.atomicannotation;
+package pt.ist.esw.advice;
 
-import java.lang.annotation.*;
+import java.util.concurrent.Callable;
 
-@Target(ElementType.METHOD)
-public @interface Atomic {
-    /** Default ContextFactory used, when none is specified in the annotation.
-      * It is recommended that atomicannotation clients provide this class.
-      **/
-    static final String DEFAULT_CONTEXT_FACTORY = "pt.ist.esw.atomicannotation.clientimpl.DefaultContextFactory";
-
-    boolean readOnly() default false;
-    boolean canFail()  default true;
-    boolean speculativeReadOnly() default true;
-    Class<? extends ContextFactory> contextFactory() default NullContextFactory.class;
+public interface Advice {
+    public <V> V perform(Callable<V> method) throws Exception;
 }

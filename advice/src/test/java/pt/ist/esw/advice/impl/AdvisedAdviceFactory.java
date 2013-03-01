@@ -1,5 +1,5 @@
 /*
- * AtomicAnnotation
+ * Advice Library
  * Copyright (C) 2012 INESC-ID Software Engineering Group
  * http://www.esw.inesc-id.pt
  *
@@ -23,11 +23,35 @@
  * 1000 - 029 Lisboa
  * Portugal
  */
-package pt.ist.esw.atomicannotation;
+package pt.ist.esw.advice.impl;
 
-public abstract class ContextFactory {
-    /** ContextFactories must override this method **/
-    public static AtomicContext newContext(Atomic atomic) {
-        throw new RuntimeException("ContextFactories must override this method.");
+import java.util.concurrent.Callable;
+
+import pt.ist.esw.advice.Advice;
+import pt.ist.esw.advice.AdviceFactory;
+
+public final class AdvisedAdviceFactory extends AdviceFactory<Advised> {
+
+    public static class MyOtherAdvice implements Advice {
+
+        public <V> V perform(Callable<V> method) throws Exception {
+            method.call();
+            return method.call();
+        }
     }
+
+    private AdvisedAdviceFactory() {
+    }
+
+    private final static AdvisedAdviceFactory instance = new AdvisedAdviceFactory();
+
+    public static AdviceFactory<Advised> getInstance() {
+        return instance;
+    }
+
+    @Override
+    public Advice newAdvice(Advised annotation) {
+        return new MyOtherAdvice();
+    }
+
 }
