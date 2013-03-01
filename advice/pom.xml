@@ -54,7 +54,7 @@
                         </goals>
                         <configuration>
                             <classpathScope>test</classpathScope>
-                            <mainClass>pt.ist.esw.advice.ProcessAtomicAnnotations</mainClass>
+                            <mainClass>pt.ist.esw.advice.ProcessAnnotations</mainClass>
                             <arguments>
                                 <argument>${test.annotation.name}</argument>
                                 <argument>${project.build.testOutputDirectory}</argument>

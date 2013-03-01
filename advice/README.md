@@ -16,7 +16,7 @@ advice and:
   `pt.ist.esw.advice.Advice` that will be called when an advised method is
   called.
   
-  3. Run `pt.ist.esw.advice.ProcessAtomicAnnotations` to post-process the
+  3. Run `pt.ist.esw.advice.ProcessAnnotations` to post-process the
   compiled classes.  This will search the presence of the advised annotation
   and replace the original method with another method that runs the advice.
   It also creates a callable to the original advised method that is given to

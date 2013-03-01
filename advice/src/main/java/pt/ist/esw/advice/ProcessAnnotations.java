@@ -73,7 +73,7 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
 
-public class ProcessAtomicAnnotations {
+public class ProcessAnnotations {
     private final Type ATOMIC; // = Type.getType(Atomic.class);
     private final Type ATOMIC_CONTEXT = Type.getType(Advice.class);
     private final Type ATOMIC_INSTANCE; // = Type.getObjectType(GenerateAnnotationInstance.ATOMIC_INSTANCE);
@@ -82,7 +82,7 @@ public class ProcessAtomicAnnotations {
     private final String ATOMIC_INSTANCE_CTOR_DESC;
     private final Class<? extends Annotation> annotationClass;
 
-    private ProcessAtomicAnnotations(Class<? extends Annotation> annotationClass) {
+    private ProcessAnnotations(Class<? extends Annotation> annotationClass) {
         this.annotationClass = annotationClass;
         this.ATOMIC = Type.getType(annotationClass);
         this.ATOMIC_INSTANCE =
@@ -128,7 +128,7 @@ public class ProcessAtomicAnnotations {
             System.exit(-1);
         }
         Class<? extends Annotation> annotationClass = (Class<? extends Annotation>) Class.forName(args[0]);
-        ProcessAtomicAnnotations processor = new ProcessAtomicAnnotations(annotationClass);
+        ProcessAnnotations processor = new ProcessAnnotations(annotationClass);
         for (int i = 1; i < args.length; i++) {
             String file = args[i];
             processor.processFile(new File(file));
