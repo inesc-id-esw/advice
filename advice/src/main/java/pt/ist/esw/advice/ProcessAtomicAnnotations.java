@@ -75,7 +75,7 @@ import org.objectweb.asm.tree.MethodNode;
 public class ProcessAtomicAnnotations {
     private static final Type ATOMIC = Type.getType(Atomic.class);
     private static final Type ATOMIC_CONTEXT = Type.getType(Advice.class);
-    private static final Type ATOMIC_INSTANCE = Type.getObjectType(GenerateAtomicInstance.ATOMIC_INSTANCE);
+    private static final Type ATOMIC_INSTANCE = Type.getObjectType(GenerateAnnotationInstance.ATOMIC_INSTANCE);
     private static final Map<String, Object> ATOMIC_ELEMENTS;
     private static final List<FieldNode> ATOMIC_FIELDS;
     private static final String ATOMIC_INSTANCE_CTOR_DESC;
@@ -107,7 +107,7 @@ public class ProcessAtomicAnnotations {
             ctorDescriptor.append(")V");
             ATOMIC_INSTANCE_CTOR_DESC = ctorDescriptor.toString();
         } catch (IOException e) {
-            throw new RuntimeException("Error opening AtomicInstance class. Have you run GenerateAtomicInstance?", e);
+            throw new RuntimeException("Error opening AtomicInstance class. Have you run GenerateAnnotationInstance?", e);
         }
     }
 

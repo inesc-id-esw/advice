@@ -51,7 +51,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
-public final class GenerateAtomicInstance {
+public final class GenerateAnnotationInstance {
 
     private static final String ATOMIC_SLASH_PREFIX = "pt/ist/esw/advice/";
     private static final String ATOMIC_INSTANCE_SLASH_PREFIX = ATOMIC_SLASH_PREFIX;
@@ -59,12 +59,12 @@ public final class GenerateAtomicInstance {
     public static final String ATOMIC = ATOMIC_SLASH_PREFIX + "Atomic";
     public static final String ATOMIC_INSTANCE = ATOMIC_INSTANCE_SLASH_PREFIX + "AtomicInstance";
 
-    private GenerateAtomicInstance() {
+    private GenerateAnnotationInstance() {
     }
 
     public static void main(String[] args) throws IOException {
         if (args.length != 1) {
-            System.err.println("Syntax: GenerateAtomicInstance <save-path>");
+            System.err.println("Syntax: GenerateAnnotationInstance <save-path>");
             System.exit(-1);
         }
         start(new File(args[0]));

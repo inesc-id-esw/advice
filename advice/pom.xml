@@ -34,7 +34,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <mainClass>pt.ist.esw.advice.GenerateAtomicInstance</mainClass>
+                    <mainClass>pt.ist.esw.advice.GenerateAnnotationInstance</mainClass>
                     <arguments>
                         <argument>${project.build.outputDirectory}</argument>
                     </arguments>
