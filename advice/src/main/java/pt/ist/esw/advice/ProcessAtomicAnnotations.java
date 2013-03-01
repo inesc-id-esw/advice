@@ -341,7 +341,7 @@ public class ProcessAtomicAnnotations {
             }
             atomicClInit.visitMethodInsn(INVOKESPECIAL, ATOMIC_INSTANCE.getInternalName(), "<init>", ATOMIC_INSTANCE_CTOR_DESC);
             // Obtain atomic context for this method
-            atomicClInit.visitMethodInsn(INVOKESTATIC, ((Type) atomicElements.get("contextFactory")).getInternalName(),
+            atomicClInit.visitMethodInsn(INVOKESTATIC, ((Type) atomicElements.get("adviceFactory")).getInternalName(),
                     "newContext", "(" + ATOMIC.getDescriptor() + ")" + ATOMIC_CONTEXT.getDescriptor());
             atomicClInit.visitFieldInsn(PUTSTATIC, className, fieldName, ATOMIC_CONTEXT.getDescriptor());
 

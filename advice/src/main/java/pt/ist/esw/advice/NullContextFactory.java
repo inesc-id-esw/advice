@@ -32,7 +32,7 @@ import java.lang.reflect.Method;
  * Implements the default strategy of delegating Context creation to the class named in
  * Atomic.DEFAULT_CONTEXT_FACTORY.
  **/
-public final class NullContextFactory extends ContextFactory {
+public final class NullContextFactory extends AdviceFactory {
     private NullContextFactory() {
     }
 
@@ -42,7 +42,7 @@ public final class NullContextFactory extends ContextFactory {
             Method newContext = defaultFactory.getMethod("newContext", Atomic.class);
             return (Advice) newContext.invoke(null, atomic);
         } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Default ContextFactory " + Atomic.DEFAULT_CONTEXT_FACTORY
+            throw new RuntimeException("Default AdviceFactory " + Atomic.DEFAULT_CONTEXT_FACTORY
                     + " was not provided, nor a custom one was specified", e);
         } catch (SecurityException e) {
             throw new RuntimeException(e);

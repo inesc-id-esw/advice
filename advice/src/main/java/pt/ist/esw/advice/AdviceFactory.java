@@ -25,7 +25,7 @@
  */
 package pt.ist.esw.advice;
 
-public abstract class ContextFactory {
+public abstract class AdviceFactory {
     /** ContextFactories must override this method **/
     public static Advice newContext(Atomic atomic) {
         throw new RuntimeException("ContextFactories must override this method.");
