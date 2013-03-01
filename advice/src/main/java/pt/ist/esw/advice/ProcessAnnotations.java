@@ -92,15 +92,15 @@ public class ProcessAnnotations {
         System.out.println("Using: " + ATOMIC_INSTANCE);
 
         // the following code was previously a static class initializer
-        Map<String, Object> atomicElements = new HashMap<String, Object>();
+        Map<String, Object> annotationElements = new HashMap<String, Object>();
         for (java.lang.reflect.Method element : this.annotationClass.getDeclaredMethods()) {
             Object defaultValue = element.getDefaultValue();
             if (defaultValue instanceof Class) {
                 defaultValue = Type.getType((Class<?>) defaultValue);
             }
-            atomicElements.put(element.getName(), defaultValue);
+            annotationElements.put(element.getName(), defaultValue);
         }
-        ATOMIC_ELEMENTS = Collections.unmodifiableMap(atomicElements);
+        ATOMIC_ELEMENTS = Collections.unmodifiableMap(annotationElements);
 
         try {
             InputStream is =
@@ -353,18 +353,18 @@ public class ProcessAnnotations {
 
             // Add code to clinit to initialize the field
             // Add default parameters from @Atomic
-            Map<String, Object> atomicElements = new HashMap<String, Object>(ATOMIC_ELEMENTS);
+            Map<String, Object> annotationElements = new HashMap<String, Object>(ATOMIC_ELEMENTS);
             // Copy parameters from method annotation
             if (atomicAnnotation.values != null) {
                 Iterator<Object> it = atomicAnnotation.values.iterator();
                 while (it.hasNext()) {
                     // ASM stores annotation values as String1, Object1, String2, Object2, ... in the values list
-                    atomicElements.put((String) it.next(), it.next());
+                    annotationElements.put((String) it.next(), it.next());
                 }
             }
 
             // Decide whether the annotation defines its own AdviceFactory and, if so, use that.  Otherwise use the default
-            Type factoryType = (Type) atomicElements.get("adviceFactory");
+            Type factoryType = (Type) annotationElements.get("adviceFactory");
             if (factoryType == null) {
                 factoryType = Type.getObjectType(AdviceFactory.DEFAULT_ADVICE_FACTORY.replace('.', '/'));
             }
@@ -376,7 +376,7 @@ public class ProcessAnnotations {
             advisedClInit.visitTypeInsn(NEW, ATOMIC_INSTANCE.getInternalName());
             advisedClInit.visitInsn(DUP);
             for (FieldNode field : ATOMIC_FIELDS) {
-                advisedClInit.visitLdcInsn(atomicElements.get(field.name));
+                advisedClInit.visitLdcInsn(annotationElements.get(field.name));
             }
             advisedClInit.visitMethodInsn(INVOKESPECIAL, ATOMIC_INSTANCE.getInternalName(), "<init>", ATOMIC_INSTANCE_CTOR_DESC);
             // Obtain advice for this method
