@@ -309,17 +309,17 @@ public class ProcessAnnotations {
          *                }
          * 
          *                public Object call() {
-         *                return Xpto.atomic$add(arg0, arg1, arg2);
+         *                return Xpto.advised$add(arg0, arg1, arg2);
          *                }
          *                }
          *                return advice$add.perform(new callable$add(this, o, i));
          *                }
          * 
-         *                synthetic static long atomic$add(Xpto this, Object o, int i) {
+         *                synthetic static long advised$add(Xpto this, Object o, int i) {
          *                // original method
          *                }
          * 
-         *                Note that any annotations from the original method are removed from the atomic$ version.
+         *                Note that any annotations from the original method are removed from the advised$ version.
          **/
         private void transactify(MethodNode mn, AnnotationNode atomicAnnotation) {
             // Mangle name if there are multiple atomic methods with the same name
@@ -400,7 +400,7 @@ public class ProcessAnnotations {
 
         private void modifyOriginalMethod(MethodNode mn) {
             // Rename original method
-            mn.name = "atomic$" + mn.name;
+            mn.name = "advised$" + mn.name;
             // Remove annotations from original method
             mn.invisibleAnnotations = Collections.<AnnotationNode> emptyList();
             mn.visibleAnnotations = Collections.<AnnotationNode> emptyList();
