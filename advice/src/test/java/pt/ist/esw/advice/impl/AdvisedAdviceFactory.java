@@ -50,7 +50,7 @@ public final class AdvisedAdviceFactory extends AdviceFactory<Advised> {
     }
 
     @Override
-    public Advice newContext(Advised atomic) {
+    public Advice newAdvice(Advised atomic) {
         return new MyOtherAdvice();
     }
 

@@ -51,7 +51,7 @@ public final class ClientAdviceFactory extends AdviceFactory<Deprecated> {
     }
 
     @Override
-    public Advice newContext(Deprecated atomic) {
+    public Advice newAdvice(Deprecated atomic) {
         return new MyAdvice();
     }
 

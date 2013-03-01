@@ -41,7 +41,7 @@ public abstract class AdviceFactory<T extends Annotation> {
     }
 
     /** AdviceFactories must override this method **/
-    public abstract Advice newContext(T atomic);
+    public abstract Advice newAdvice(T atomic);
 
     public static @interface A {
     }
@@ -49,12 +49,12 @@ public abstract class AdviceFactory<T extends Annotation> {
     public static class M extends AdviceFactory<A> {
 
         @Override
-        public Advice newContext(A atomic) {
+        public Advice newAdvice(A atomic) {
             return null;
         }
 
         public void m() {
-            new M().newContext(new A() {
+            new M().newAdvice(new A() {
 
                 public Class<? extends Annotation> annotationType() {
                     // TODO Auto-generated method stub

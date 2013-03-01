@@ -75,7 +75,7 @@ import org.objectweb.asm.tree.MethodNode;
 
 public class ProcessAnnotations {
     private final Type ATOMIC; // = Type.getType(Atomic.class);
-    private final Type ATOMIC_CONTEXT = Type.getType(Advice.class);
+    private final Type ADVICE = Type.getType(Advice.class);
     private final Type ATOMIC_INSTANCE; // = Type.getObjectType(GenerateAnnotationInstance.ATOMIC_INSTANCE);
     private final Map<String, Object> ATOMIC_ELEMENTS;
     private final List<FieldNode> ATOMIC_FIELDS;
@@ -293,7 +293,7 @@ public class ProcessAnnotations {
          * @Atomic @SomethingElse public long add(Object o, int i)
          *         we generate the following code:
          * 
-         *         public static [final] Advice context$add = Advice.newContext();
+         *         public static [final] Advice advice$add = Advice.newAdvice();
          * 
          * @SomethingElse
          *                public long add(Object o, int i) {
@@ -312,7 +312,7 @@ public class ProcessAnnotations {
          *                return Xpto.atomic$add(arg0, arg1, arg2);
          *                }
          *                }
-         *                return context$add.perform(new atomicannotation$callable$add(this, o, i));
+         *                return advice$add.perform(new atomicannotation$callable$add(this, o, i));
          *                }
          * 
          *                synthetic static long atomic$add(Xpto this, Object o, int i) {
@@ -324,12 +324,12 @@ public class ProcessAnnotations {
         private void transactify(MethodNode mn, AnnotationNode atomicAnnotation) {
             // Mangle name if there are multiple atomic methods with the same name
             String methodName = getMethodName(mn.name);
-            // Name for context field
-            String fieldName = "context$" + methodName;
+            // Name for advice field
+            String fieldName = "advice$" + methodName;
             // Name for callable class
             String callableClass = className + "$atomicannotation$callable$" + methodName;
 
-            // Generate new method which will invoke the context with the Callable
+            // Generate new method which will invoke the advice with the Callable
             MethodVisitor atomicMethod =
                     cv.visitMethod(mn.access, mn.name, mn.desc, mn.signature, mn.exceptions.toArray(new String[0]));
 
@@ -348,8 +348,8 @@ public class ProcessAnnotations {
                 }
             }
 
-            // Create field to save context
-            cv.visitField(ACC_PUBLIC | ACC_STATIC | ACC_FINAL, fieldName, ATOMIC_CONTEXT.getDescriptor(), null, null);
+            // Create field to save advice
+            cv.visitField(ACC_PUBLIC | ACC_STATIC | ACC_FINAL, fieldName, ADVICE.getDescriptor(), null, null);
 
             // Add code to clinit to initialize the field
             // Add default parameters from @Atomic
@@ -379,14 +379,14 @@ public class ProcessAnnotations {
                 atomicClInit.visitLdcInsn(atomicElements.get(field.name));
             }
             atomicClInit.visitMethodInsn(INVOKESPECIAL, ATOMIC_INSTANCE.getInternalName(), "<init>", ATOMIC_INSTANCE_CTOR_DESC);
-            // Obtain atomic context for this method
-            atomicClInit.visitMethodInsn(INVOKEVIRTUAL, Type.getType(AdviceFactory.class).getInternalName(), "newContext", "("
-                    + Type.getType(Annotation.class).getDescriptor() + ")" + ATOMIC_CONTEXT.getDescriptor());
+            // Obtain advice for this method
+            atomicClInit.visitMethodInsn(INVOKEVIRTUAL, Type.getType(AdviceFactory.class).getInternalName(), "newAdvice", "("
+                    + Type.getType(Annotation.class).getDescriptor() + ")" + ADVICE.getDescriptor());
 
             //            atomicClInit.visitInsn(POP);
 //            atomicClInit.visitInsn(ACONST_NULL);
 
-            atomicClInit.visitFieldInsn(PUTSTATIC, className, fieldName, ATOMIC_CONTEXT.getDescriptor());
+            atomicClInit.visitFieldInsn(PUTSTATIC, className, fieldName, ADVICE.getDescriptor());
 
             // Repurpose original method
             modifyOriginalMethod(mn);
@@ -420,7 +420,7 @@ public class ProcessAnnotations {
 
         private void generateMethodCode(MethodNode mn, MethodVisitor mv, String fieldName, String callableClass) {
             mv.visitCode();
-            mv.visitFieldInsn(GETSTATIC, className, fieldName, ATOMIC_CONTEXT.getDescriptor());
+            mv.visitFieldInsn(GETSTATIC, className, fieldName, ADVICE.getDescriptor());
             mv.visitTypeInsn(NEW, callableClass);
             mv.visitInsn(DUP);
 
@@ -431,7 +431,7 @@ public class ProcessAnnotations {
                 pos += t.getSize();
             }
             mv.visitMethodInsn(INVOKESPECIAL, callableClass, "<init>", getCallableCtorDesc(mn));
-            mv.visitMethodInsn(INVOKEINTERFACE, ATOMIC_CONTEXT.getInternalName(), "perform",
+            mv.visitMethodInsn(INVOKEINTERFACE, ADVICE.getInternalName(), "perform",
                     "(Ljava/util/concurrent/Callable;)Ljava/lang/Object;");
 
             // Return value
