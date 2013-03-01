@@ -23,27 +23,35 @@
  * 1000 - 029 Lisboa
  * Portugal
  */
-package pt.ist.esw.advice.clientimpl;
+package pt.ist.esw.advice.impl;
 
 import java.util.concurrent.Callable;
 
 import pt.ist.esw.advice.Advice;
 import pt.ist.esw.advice.AdviceFactory;
-import pt.ist.esw.advice.Atomic;
 
-public class DefaultContextFactory extends AdviceFactory {
+public final class AdvisedAdviceFactory extends AdviceFactory<Advised> {
 
-    public static class MyAdvice implements Advice {
+    public static class MyOtherAdvice implements Advice {
 
         public <V> V perform(Callable<V> method) throws Exception {
             method.call();
-            method.call();
-            return null;
+            return method.call();
         }
     }
 
-    public static Advice newContext(Atomic atomic) {
-        return new MyAdvice();
+    private AdvisedAdviceFactory() {
+    }
+
+    private final static AdvisedAdviceFactory instance = new AdvisedAdviceFactory();
+
+    public static AdviceFactory<Advised> getInstance() {
+        return instance;
+    }
+
+    @Override
+    public Advice newContext(Advised atomic) {
+        return new MyOtherAdvice();
     }
 
 }

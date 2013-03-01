@@ -43,6 +43,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.annotation.Annotation;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
@@ -52,25 +53,41 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
 public final class GenerateAnnotationInstance {
+    static final String ATOMIC_INSTANCE_SLASH_PREFIX = "pt/ist/esw/advice/";
 
-    private static final String ATOMIC_SLASH_PREFIX = "pt/ist/esw/advice/";
-    private static final String ATOMIC_INSTANCE_SLASH_PREFIX = ATOMIC_SLASH_PREFIX;
+    private final String ATOMIC_SLASH_PREFIX; // = "pt/ist/esw/advice/";
 
-    public static final String ATOMIC = ATOMIC_SLASH_PREFIX + "Atomic";
-    public static final String ATOMIC_INSTANCE = ATOMIC_INSTANCE_SLASH_PREFIX + "AtomicInstance";
+    private final String ATOMIC; // = ATOMIC_SLASH_PREFIX + "Atomic";
+    private final String ATOMIC_INSTANCE; // = ATOMIC_INSTANCE_SLASH_PREFIX + "AtomicInstance";
 
-    private GenerateAnnotationInstance() {
+    private final Class<? extends Annotation> annotationClass;
+    private final File buildDir;
+
+    public GenerateAnnotationInstance(Class<? extends Annotation> annotationClass, File buildDir) {
+        this.annotationClass = annotationClass;
+
+        String annotationName = annotationClass.getName();
+        String packageName = annotationClass.getPackage().getName();
+
+        this.ATOMIC_SLASH_PREFIX = packageName.replace('.', '/') + "/";
+
+        this.ATOMIC = annotationName.replace('.', '/'); //this.ATOMIC_SLASH_PREFIX + annotationSimpleName;
+        this.ATOMIC_INSTANCE = ATOMIC_INSTANCE_SLASH_PREFIX + annotationClass.getSimpleName() + "Instance";
+
+        this.buildDir = buildDir;
     }
 
-    public static void main(String[] args) throws IOException {
-        if (args.length != 1) {
-            System.err.println("Syntax: GenerateAnnotationInstance <save-path>");
+    public static void main(String[] args) throws IOException, ClassNotFoundException {
+        if (args.length != 2) {
+            System.err.println("Syntax: GenerateAnnotationInstance <annotation-class> <save-path>");
             System.exit(-1);
         }
-        start(new File(args[0]));
+        Class<? extends Annotation> annotationClass = (Class<? extends Annotation>) Class.forName(args[0]);
+        new GenerateAnnotationInstance(annotationClass, new File(args[1])).start();
     }
 
-    public static void start(File buildDir) throws IOException {
+    public void start() throws IOException {
+
         InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(ATOMIC + ".class");
         ClassReader cr = new ClassReader(is);
         ClassNode cNode = new ClassNode();
@@ -78,7 +95,7 @@ public final class GenerateAnnotationInstance {
 
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         cw.visit(V1_6, ACC_PUBLIC | ACC_FINAL, ATOMIC_INSTANCE, null, "java/lang/Object", new String[] { ATOMIC });
-        cw.visitSource("Atomic Instance Class", null);
+        cw.visitSource("Annotation Instance Class", null);
 
         // Generate fields
         for (MethodNode annotationElems : cNode.methods) {
@@ -127,7 +144,7 @@ public final class GenerateAnnotationInstance {
                     cw.visitMethod(ACC_PUBLIC, "annotationType", "()Ljava/lang/Class;",
                             "()Ljava/lang/Class<+Ljava/lang/annotation/Annotation;>;", null);
             mv.visitCode();
-            mv.visitLdcInsn(Type.getType(Atomic.class));
+            mv.visitLdcInsn(Type.getType(this.annotationClass));
             mv.visitInsn(ARETURN);
             mv.visitMaxs(1, 1);
             mv.visitEnd();
@@ -141,7 +158,7 @@ public final class GenerateAnnotationInstance {
                 throw new IOException("Could not create required directory: " + parentDir);
             }
 
-            File f = new File(parentDir, "AtomicInstance.class");
+            File f = new File(parentDir, this.annotationClass.getSimpleName() + "Instance.class");
             fos = new FileOutputStream(f);
             fos.write(cw.toByteArray());
         } finally {
@@ -154,7 +171,7 @@ public final class GenerateAnnotationInstance {
         }
     }
 
-    private static String getReturnTypeDescriptor(MethodNode mNode) {
+    private String getReturnTypeDescriptor(MethodNode mNode) {
         return Type.getReturnType(mNode.desc).getDescriptor();
     }
 

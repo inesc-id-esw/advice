@@ -13,6 +13,9 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         
+        <test.annotation.name>pt.ist.esw.advice.impl.Advised</test.annotation.name>
+        <!-- <test.annotation.name>java.lang.Deprecated</test.annotation.name> -->
+
         <version.asm>4.0</version.asm>
         <version.junit>4.11</version.junit>
         <version.maven.exec-plugin>1.2.1</version.maven.exec-plugin>
@@ -21,7 +24,8 @@
 
     <build>
         <plugins>
-            <!-- Generate the AtomicInstance class immediatly after compiling -->
+            <!-- Generate the Annotation Instance class and Process Annotation
+                 after compiling tests -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
@@ -29,13 +33,15 @@
                 <executions>
                     <execution>
                         <id>generate-annotation-instance</id>
-                        <phase>process-classes</phase>
+                        <phase>process-test-classes</phase>
                         <goals>
                             <goal>java</goal>
                         </goals>
                         <configuration>
+                            <classpathScope>test</classpathScope>
                             <mainClass>pt.ist.esw.advice.GenerateAnnotationInstance</mainClass>
                             <arguments>
+                                <argument>${test.annotation.name}</argument>
                                 <argument>${project.build.outputDirectory}</argument>
                             </arguments>
                         </configuration>
@@ -47,8 +53,10 @@
                             <goal>java</goal>
                         </goals>
                         <configuration>
+                            <classpathScope>test</classpathScope>
                             <mainClass>pt.ist.esw.advice.ProcessAtomicAnnotations</mainClass>
                             <arguments>
+                                <argument>${test.annotation.name}</argument>
                                 <argument>${project.build.testOutputDirectory}</argument>
                             </arguments>
                         </configuration>

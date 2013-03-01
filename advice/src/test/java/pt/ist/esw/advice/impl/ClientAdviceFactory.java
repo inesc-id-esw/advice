@@ -23,49 +23,36 @@
  * 1000 - 029 Lisboa
  * Portugal
  */
-package pt.ist.esw.advice;
+package pt.ist.esw.advice.impl;
 
-import static org.junit.Assert.assertEquals;
+import java.util.concurrent.Callable;
 
-import org.junit.Before;
-import org.junit.Test;
+import pt.ist.esw.advice.Advice;
+import pt.ist.esw.advice.AdviceFactory;
 
-import pt.ist.esw.advice.impl.Advised;
+public final class ClientAdviceFactory extends AdviceFactory<Deprecated> {
 
-/**
- *
- */
-public class TestAdvice {
+    public static class MyAdvice implements Advice {
 
-    public int i;
+        public <V> V perform(Callable<V> method) throws Exception {
+            method.call();
+            return method.call();
 
-    @Before
-    public void resetCounter() {
-        i = 0;
+        }
     }
 
-    @Test
-    public void testAdviceRunsOnce() {
-        assertEquals(0, i);
-        // run inc() advised, which should run it twice
-        inc();
-        assertEquals(2, i);
+    private ClientAdviceFactory() {
     }
 
-    @Test
-    public void testAdviceRunsTwice() {
-        assertEquals(0, i);
-        // run inc() advised, which should run it twice
-        inc();
-        // run inc() advised, which should run it twice
-        inc();
-        assertEquals(4, i);
+    private final static ClientAdviceFactory instance = new ClientAdviceFactory();
+
+    public static AdviceFactory<Deprecated> getInstance() {
+        return instance;
     }
 
-    @Advised
-    @Deprecated
-    private void inc() {
-        i++;
+    @Override
+    public Advice newContext(Deprecated atomic) {
+        return new MyAdvice();
     }
 
 }

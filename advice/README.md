@@ -11,7 +11,7 @@ advice and:
   AnnotationInstance class that represents the selected annotation instance.
   This class will be used internally.
   
-  2. Define the `pt.ist.esw.advice.clientimpl.DefaultAdviceFactory` which
+  2. Define the `pt.ist.esw.advice.impl.ClientAdviceFactory` which
   takes the selected annotation instance and should return the
   `pt.ist.esw.advice.Advice` that will be called when an advised method is
   called.

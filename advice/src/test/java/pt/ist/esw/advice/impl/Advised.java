@@ -23,27 +23,22 @@
  * 1000 - 029 Lisboa
  * Portugal
  */
-package pt.ist.esw.advice.clientimpl;
+package pt.ist.esw.advice.impl;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 
 import pt.ist.esw.advice.AdviceFactory;
-import pt.ist.esw.advice.NullContextFactory;
 
 @Target(ElementType.METHOD)
 public @interface Advised {
-    /**
-     * Default AdviceFactory used, when none is specified in the annotation.
-     * It is recommended that clients provide this class.
-     **/
-    static final String DEFAULT_CONTEXT_FACTORY = "pt.ist.esw.advice.clientimpl.DefaultContextFactory";
 
-    boolean readOnly() default false;
+//    boolean readOnly() default false;
+//
+//    boolean canFail() default true;
+//
+//    boolean speculativeReadOnly() default true;
 
-    boolean canFail() default true;
-
-    boolean speculativeReadOnly() default true;
-
-    Class<? extends AdviceFactory> adviceFactory() default NullContextFactory.class;
+//
+    Class<? extends AdviceFactory> adviceFactory() default AdvisedAdviceFactory.class;
 }

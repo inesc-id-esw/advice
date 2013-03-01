@@ -27,9 +27,42 @@ package pt.ist.esw.advice;
 
 import java.lang.annotation.Annotation;
 
-public abstract class AdviceFactory {
-    /** ContextFactories must override this method **/
-    public static Advice newContext(Annotation atomic) {
-        throw new RuntimeException("ContextFactories must override this method.");
+public abstract class AdviceFactory<T extends Annotation> {
+    /**
+     * Default AdviceFactory used, when none is specified in the annotation.
+     * Clients must either provide this class or define the property <code>Class<? extends AdviceFactory> adviceFactory() </code>
+     * in their annotation.
+     **/
+    public static final String DEFAULT_ADVICE_FACTORY = "pt.ist.esw.advice.impl.ClientAdviceFactory";
+
+    /** AdviceFactories must override this method **/
+    public static <T extends Annotation> AdviceFactory<T> getInstance() {
+        throw new UnsupportedOperationException("Clients must provide an AdviceFactory with a 'getInstance()' method.");
+    }
+
+    /** AdviceFactories must override this method **/
+    public abstract Advice newContext(T atomic);
+
+    public static @interface A {
+    }
+
+    public static class M extends AdviceFactory<A> {
+
+        @Override
+        public Advice newContext(A atomic) {
+            return null;
+        }
+
+        public void m() {
+            new M().newContext(new A() {
+
+                public Class<? extends Annotation> annotationType() {
+                    // TODO Auto-generated method stub
+                    throw new UnsupportedOperationException("not yet implemented");
+                }
+
+            });
+
+        }
     }
 }

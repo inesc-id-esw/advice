@@ -55,6 +55,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -73,16 +74,26 @@ import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
 
 public class ProcessAtomicAnnotations {
-    private static final Type ATOMIC = Type.getType(Atomic.class);
-    private static final Type ATOMIC_CONTEXT = Type.getType(Advice.class);
-    private static final Type ATOMIC_INSTANCE = Type.getObjectType(GenerateAnnotationInstance.ATOMIC_INSTANCE);
-    private static final Map<String, Object> ATOMIC_ELEMENTS;
-    private static final List<FieldNode> ATOMIC_FIELDS;
-    private static final String ATOMIC_INSTANCE_CTOR_DESC;
+    private final Type ATOMIC; // = Type.getType(Atomic.class);
+    private final Type ATOMIC_CONTEXT = Type.getType(Advice.class);
+    private final Type ATOMIC_INSTANCE; // = Type.getObjectType(GenerateAnnotationInstance.ATOMIC_INSTANCE);
+    private final Map<String, Object> ATOMIC_ELEMENTS;
+    private final List<FieldNode> ATOMIC_FIELDS;
+    private final String ATOMIC_INSTANCE_CTOR_DESC;
+    private final Class<? extends Annotation> annotationClass;
 
-    static {
+    private ProcessAtomicAnnotations(Class<? extends Annotation> annotationClass) {
+        this.annotationClass = annotationClass;
+        this.ATOMIC = Type.getType(annotationClass);
+        this.ATOMIC_INSTANCE =
+                Type.getObjectType(GenerateAnnotationInstance.ATOMIC_INSTANCE_SLASH_PREFIX + annotationClass.getSimpleName()
+                        + "Instance");
+
+        System.out.println("Using: " + ATOMIC_INSTANCE);
+
+        // the following code was previously a static class initializer
         Map<String, Object> atomicElements = new HashMap<String, Object>();
-        for (java.lang.reflect.Method element : Atomic.class.getDeclaredMethods()) {
+        for (java.lang.reflect.Method element : this.annotationClass.getDeclaredMethods()) {
             Object defaultValue = element.getDefaultValue();
             if (defaultValue instanceof Class) {
                 defaultValue = Type.getType((Class<?>) defaultValue);
@@ -111,22 +122,26 @@ public class ProcessAtomicAnnotations {
         }
     }
 
-    private ProcessAtomicAnnotations() {
-    }
-
     public static void main(final String args[]) throws Exception {
-        for (String file : args) {
-            ProcessAtomicAnnotations.processFile(new File(file));
+        if (args.length < 1) {
+            System.err.println("Syntax: GenerateAnnotationInstance <annotation-class> [class files or dirs]");
+            System.exit(-1);
+        }
+        Class<? extends Annotation> annotationClass = (Class<? extends Annotation>) Class.forName(args[0]);
+        ProcessAtomicAnnotations processor = new ProcessAtomicAnnotations(annotationClass);
+        for (int i = 1; i < args.length; i++) {
+            String file = args[i];
+            processor.processFile(new File(file));
         }
     }
 
-    public static void processFiles(File[] files) {
-        for (File file : files) {
-            processFile(file);
-        }
-    }
+//    public void processFiles(File[] files) {
+//        for (File file : files) {
+//            processFile(file);
+//        }
+//    }
 
-    public static void processFile(File file) {
+    public void processFile(File file) {
         if (file.isDirectory()) {
             for (File subFile : file.listFiles()) {
                 processFile(subFile);
@@ -139,7 +154,7 @@ public class ProcessAtomicAnnotations {
         }
     }
 
-    protected static void processClassFile(File classFile) {
+    protected void processClassFile(File classFile) {
         InputStream is = null;
 
         try {
@@ -184,7 +199,7 @@ public class ProcessAtomicAnnotations {
         }
     }
 
-    static class AtomicMethodTransformer extends ClassVisitor {
+    class AtomicMethodTransformer extends ClassVisitor {
         private final List<MethodNode> methods = new ArrayList<MethodNode>();
         private final List<String> atomicMethodNames = new ArrayList<String>();
         private final MethodNode atomicClInit;
@@ -227,6 +242,17 @@ public class ProcessAtomicAnnotations {
 
                 if (mn.invisibleAnnotations != null) {
                     for (AnnotationNode an : mn.invisibleAnnotations) {
+                        if (an.desc.equals(ATOMIC.getDescriptor())) {
+                            //System.out.println("Method " + mn.name + " is tagged with @Atomic");
+                            hasAtomic = true;
+                            // Create new transactified method
+                            transactify(mn, an);
+                            break;
+                        }
+                    }
+                }
+                if (mn.visibleAnnotations != null) {
+                    for (AnnotationNode an : mn.visibleAnnotations) {
                         if (an.desc.equals(ATOMIC.getDescriptor())) {
                             //System.out.println("Method " + mn.name + " is tagged with @Atomic");
                             hasAtomic = true;
@@ -307,13 +333,16 @@ public class ProcessAtomicAnnotations {
             MethodVisitor atomicMethod =
                     cv.visitMethod(mn.access, mn.name, mn.desc, mn.signature, mn.exceptions.toArray(new String[0]));
 
-            // Remove @Atomic annotation
-            mn.invisibleAnnotations.remove(atomicAnnotation);
-            // Copy other annotations from the original method to the newly created method
-            for (AnnotationNode an : mn.invisibleAnnotations) {
-                an.accept(atomicMethod.visitAnnotation(an.desc, false));
+            // Remove @Atomic annotation and copy other annotations from the original method to the newly created method
+            if (mn.invisibleAnnotations != null) {
+                mn.invisibleAnnotations.remove(atomicAnnotation);
+                for (AnnotationNode an : mn.invisibleAnnotations) {
+                    an.accept(atomicMethod.visitAnnotation(an.desc, false));
+                }
+
             }
             if (mn.visibleAnnotations != null) {
+                mn.visibleAnnotations.remove(atomicAnnotation);
                 for (AnnotationNode an : mn.visibleAnnotations) {
                     an.accept(atomicMethod.visitAnnotation(an.desc, true));
                 }
@@ -333,6 +362,16 @@ public class ProcessAtomicAnnotations {
                     atomicElements.put((String) it.next(), it.next());
                 }
             }
+
+            // Decide whether the annotation defines its own AdviceFactory and, if so, use that.  Otherwise use the default
+            Type factoryType = (Type) atomicElements.get("adviceFactory");
+            if (factoryType == null) {
+                factoryType = Type.getObjectType(AdviceFactory.DEFAULT_ADVICE_FACTORY.replace('.', '/'));
+            }
+
+            atomicClInit.visitMethodInsn(INVOKESTATIC, factoryType.getInternalName(), "getInstance",
+                    "()" + Type.getType(AdviceFactory.class).getDescriptor());
+
             // Push @Atomic parameters on the stack and create AtomicInstance
             atomicClInit.visitTypeInsn(NEW, ATOMIC_INSTANCE.getInternalName());
             atomicClInit.visitInsn(DUP);
@@ -341,8 +380,12 @@ public class ProcessAtomicAnnotations {
             }
             atomicClInit.visitMethodInsn(INVOKESPECIAL, ATOMIC_INSTANCE.getInternalName(), "<init>", ATOMIC_INSTANCE_CTOR_DESC);
             // Obtain atomic context for this method
-            atomicClInit.visitMethodInsn(INVOKESTATIC, ((Type) atomicElements.get("adviceFactory")).getInternalName(),
-                    "newContext", "(" + ATOMIC.getDescriptor() + ")" + ATOMIC_CONTEXT.getDescriptor());
+            atomicClInit.visitMethodInsn(INVOKEVIRTUAL, Type.getType(AdviceFactory.class).getInternalName(), "newContext", "("
+                    + Type.getType(Annotation.class).getDescriptor() + ")" + ATOMIC_CONTEXT.getDescriptor());
+
+            //            atomicClInit.visitInsn(POP);
+//            atomicClInit.visitInsn(ACONST_NULL);
+
             atomicClInit.visitFieldInsn(PUTSTATIC, className, fieldName, ATOMIC_CONTEXT.getDescriptor());
 
             // Repurpose original method
@@ -404,7 +447,7 @@ public class ProcessAtomicAnnotations {
             mv.visitEnd();
         }
 
-        private static boolean isStatic(MethodNode mn) {
+        private boolean isStatic(MethodNode mn) {
             return (mn.access & ACC_STATIC) > 0;
         }
 
@@ -497,13 +540,13 @@ public class ProcessAtomicAnnotations {
             writeClassFile(new File(classFile.getParent() + File.separatorChar + callableFileName), cw.toByteArray());
         }
 
-        private static final Object[][] primitiveWrappers = new Object[][] { { "java/lang/Boolean", Type.BOOLEAN_TYPE },
+        private final Object[][] primitiveWrappers = new Object[][] { { "java/lang/Boolean", Type.BOOLEAN_TYPE },
                 { "java/lang/Byte", Type.BYTE_TYPE }, { "java/lang/Character", Type.CHAR_TYPE },
                 { "java/lang/Short", Type.SHORT_TYPE }, { "java/lang/Integer", Type.INT_TYPE },
                 { "java/lang/Long", Type.LONG_TYPE }, { "java/lang/Float", Type.FLOAT_TYPE },
                 { "java/lang/Double", Type.DOUBLE_TYPE } };
 
-        private static Type toObject(Type primitiveType) {
+        private Type toObject(Type primitiveType) {
             for (Object[] map : primitiveWrappers) {
                 if (primitiveType.equals(map[1])) {
                     return Type.getObjectType((String) map[0]);
@@ -512,18 +555,18 @@ public class ProcessAtomicAnnotations {
             throw new AssertionError();
         }
 
-        private static boolean isPrimitive(Type type) {
+        private boolean isPrimitive(Type type) {
             int sort = type.getSort();
             return sort != Type.VOID && sort != Type.ARRAY && sort != Type.OBJECT && sort != Type.METHOD;
         }
 
-        private static void boxWrap(Type primitiveType, MethodVisitor mv) {
+        private void boxWrap(Type primitiveType, MethodVisitor mv) {
             Type objectType = toObject(primitiveType);
             mv.visitMethodInsn(INVOKESTATIC, objectType.getInternalName(), "valueOf", "(" + primitiveType.getDescriptor() + ")"
                     + objectType.getDescriptor());
         }
 
-        private static void boxUnwrap(Type primitiveType, MethodVisitor mv) {
+        private void boxUnwrap(Type primitiveType, MethodVisitor mv) {
             Type objectType = toObject(primitiveType);
             mv.visitTypeInsn(CHECKCAST, objectType.getInternalName());
             mv.visitMethodInsn(INVOKEVIRTUAL, objectType.getInternalName(), primitiveType.getClassName() + "Value", "()"
