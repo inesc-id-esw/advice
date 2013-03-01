@@ -321,7 +321,7 @@ public class ProcessAnnotations {
          * 
          *                Note that any annotations from the original method are removed from the advised$ version.
          **/
-        private void transactify(MethodNode mn, AnnotationNode atomicAnnotation) {
+        private void transactify(MethodNode mn, AnnotationNode advisedAnnotation) {
             // Mangle name if there are multiple atomic methods with the same name
             String methodName = getMethodName(mn.name);
             // Name for advice field
@@ -335,14 +335,14 @@ public class ProcessAnnotations {
 
             // Remove @Atomic annotation and copy other annotations from the original method to the newly created method
             if (mn.invisibleAnnotations != null) {
-                mn.invisibleAnnotations.remove(atomicAnnotation);
+                mn.invisibleAnnotations.remove(advisedAnnotation);
                 for (AnnotationNode an : mn.invisibleAnnotations) {
                     an.accept(advisedMethod.visitAnnotation(an.desc, false));
                 }
 
             }
             if (mn.visibleAnnotations != null) {
-                mn.visibleAnnotations.remove(atomicAnnotation);
+                mn.visibleAnnotations.remove(advisedAnnotation);
                 for (AnnotationNode an : mn.visibleAnnotations) {
                     an.accept(advisedMethod.visitAnnotation(an.desc, true));
                 }
@@ -355,8 +355,8 @@ public class ProcessAnnotations {
             // Add default parameters from @Atomic
             Map<String, Object> annotationElements = new HashMap<String, Object>(ATOMIC_ELEMENTS);
             // Copy parameters from method annotation
-            if (atomicAnnotation.values != null) {
-                Iterator<Object> it = atomicAnnotation.values.iterator();
+            if (advisedAnnotation.values != null) {
+                Iterator<Object> it = advisedAnnotation.values.iterator();
                 while (it.hasNext()) {
                     // ASM stores annotation values as String1, Object1, String2, Object2, ... in the values list
                     annotationElements.put((String) it.next(), it.next());
