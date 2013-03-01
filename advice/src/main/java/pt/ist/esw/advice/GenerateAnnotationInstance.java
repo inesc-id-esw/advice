@@ -53,12 +53,10 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
 public final class GenerateAnnotationInstance {
-    static final String ATOMIC_INSTANCE_SLASH_PREFIX = "pt/ist/esw/advice/";
+    static final String ANNOTATION_INSTANCE_SLASH_PREFIX = GenerateAnnotationInstance.class.getPackage().getName().replace('.', '/') + "/";
 
-    private final String ATOMIC_SLASH_PREFIX; // = "pt/ist/esw/advice/";
-
-    private final String ATOMIC; // = ATOMIC_SLASH_PREFIX + "Atomic";
-    private final String ATOMIC_INSTANCE; // = ATOMIC_INSTANCE_SLASH_PREFIX + "AtomicInstance";
+    private final String ANNOTATION;
+    private final String ANNOTATION_INSTANCE;
 
     private final Class<? extends Annotation> annotationClass;
     private final File buildDir;
@@ -67,12 +65,8 @@ public final class GenerateAnnotationInstance {
         this.annotationClass = annotationClass;
 
         String annotationName = annotationClass.getName();
-        String packageName = annotationClass.getPackage().getName();
-
-        this.ATOMIC_SLASH_PREFIX = packageName.replace('.', '/') + "/";
-
-        this.ATOMIC = annotationName.replace('.', '/'); //this.ATOMIC_SLASH_PREFIX + annotationSimpleName;
-        this.ATOMIC_INSTANCE = ATOMIC_INSTANCE_SLASH_PREFIX + annotationClass.getSimpleName() + "Instance";
+        this.ANNOTATION = annotationName.replace('.', '/');
+        this.ANNOTATION_INSTANCE = ANNOTATION_INSTANCE_SLASH_PREFIX + annotationClass.getSimpleName() + "Instance";
 
         this.buildDir = buildDir;
     }
@@ -82,19 +76,19 @@ public final class GenerateAnnotationInstance {
             System.err.println("Syntax: GenerateAnnotationInstance <annotation-class> <save-path>");
             System.exit(-1);
         }
-        Class<? extends Annotation> annotationClass = (Class<? extends Annotation>) Class.forName(args[0]);
+        Class<? extends Annotation> annotationClass = Class.forName(args[0]).asSubclass(Annotation.class);
         new GenerateAnnotationInstance(annotationClass, new File(args[1])).start();
     }
 
     public void start() throws IOException {
 
-        InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(ATOMIC + ".class");
+        InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(ANNOTATION + ".class");
         ClassReader cr = new ClassReader(is);
         ClassNode cNode = new ClassNode();
         cr.accept(cNode, 0);
 
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        cw.visit(V1_6, ACC_PUBLIC | ACC_FINAL, ATOMIC_INSTANCE, null, "java/lang/Object", new String[] { ATOMIC });
+        cw.visit(V1_6, ACC_PUBLIC | ACC_FINAL, ANNOTATION_INSTANCE, null, "java/lang/Object", new String[] { ANNOTATION });
         cw.visitSource("Annotation Instance Class", null);
 
         // Generate fields
@@ -119,7 +113,7 @@ public final class GenerateAnnotationInstance {
                 Type t = Type.getReturnType(annotationElems.desc);
                 mv.visitVarInsn(ALOAD, 0);
                 mv.visitVarInsn(t.getOpcode(ILOAD), localsPos + 1);
-                mv.visitFieldInsn(PUTFIELD, ATOMIC_INSTANCE, annotationElems.name, t.getDescriptor());
+                mv.visitFieldInsn(PUTFIELD, ANNOTATION_INSTANCE, annotationElems.name, t.getDescriptor());
                 localsPos += t.getSize();
             }
             mv.visitInsn(RETURN);
@@ -132,7 +126,7 @@ public final class GenerateAnnotationInstance {
             MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, annotationElems.name, annotationElems.desc, null, null);
             mv.visitCode();
             mv.visitVarInsn(ALOAD, 0);
-            mv.visitFieldInsn(GETFIELD, ATOMIC_INSTANCE, annotationElems.name, getReturnTypeDescriptor(annotationElems));
+            mv.visitFieldInsn(GETFIELD, ANNOTATION_INSTANCE, annotationElems.name, getReturnTypeDescriptor(annotationElems));
             mv.visitInsn(Type.getReturnType(annotationElems.desc).getOpcode(IRETURN));
             mv.visitMaxs(0, 0);
             mv.visitEnd();
@@ -153,7 +147,7 @@ public final class GenerateAnnotationInstance {
         // Write Class
         FileOutputStream fos = null;
         try {
-            File parentDir = new File(buildDir, ATOMIC_INSTANCE_SLASH_PREFIX.replace('/', separatorChar));
+            File parentDir = new File(buildDir, ANNOTATION_INSTANCE_SLASH_PREFIX.replace('/', separatorChar));
             if (!parentDir.exists() && !parentDir.mkdirs()) {
                 throw new IOException("Could not create required directory: " + parentDir);
             }

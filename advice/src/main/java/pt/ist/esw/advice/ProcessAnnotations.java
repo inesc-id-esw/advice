@@ -74,22 +74,20 @@ import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
 
 public class ProcessAnnotations {
-    private final Type ATOMIC; // = Type.getType(Atomic.class);
+    private final Type ANNOTATION;
     private final Type ADVICE = Type.getType(Advice.class);
-    private final Type ATOMIC_INSTANCE; // = Type.getObjectType(GenerateAnnotationInstance.ATOMIC_INSTANCE);
-    private final Map<String, Object> ATOMIC_ELEMENTS;
-    private final List<FieldNode> ATOMIC_FIELDS;
-    private final String ATOMIC_INSTANCE_CTOR_DESC;
+    private final Type ANNOTATION_INSTANCE;
+    private final Map<String, Object> ANNOTATION_ELEMENTS;
+    private final List<FieldNode> ANNOTATION_FIELDS;
+    private final String ANNOTATION_INSTANCE_CTOR_DESC;
     private final Class<? extends Annotation> annotationClass;
 
     private ProcessAnnotations(Class<? extends Annotation> annotationClass) {
         this.annotationClass = annotationClass;
-        this.ATOMIC = Type.getType(annotationClass);
-        this.ATOMIC_INSTANCE =
-                Type.getObjectType(GenerateAnnotationInstance.ATOMIC_INSTANCE_SLASH_PREFIX + annotationClass.getSimpleName()
+        this.ANNOTATION = Type.getType(annotationClass);
+        this.ANNOTATION_INSTANCE =
+                Type.getObjectType(GenerateAnnotationInstance.ANNOTATION_INSTANCE_SLASH_PREFIX + annotationClass.getSimpleName()
                         + "Instance");
-
-        System.out.println("Using: " + ATOMIC_INSTANCE);
 
         // the following code was previously a static class initializer
         Map<String, Object> annotationElements = new HashMap<String, Object>();
@@ -100,25 +98,26 @@ public class ProcessAnnotations {
             }
             annotationElements.put(element.getName(), defaultValue);
         }
-        ATOMIC_ELEMENTS = Collections.unmodifiableMap(annotationElements);
+        ANNOTATION_ELEMENTS = Collections.unmodifiableMap(annotationElements);
 
         try {
             InputStream is =
                     Thread.currentThread().getContextClassLoader()
-                            .getResourceAsStream(ATOMIC_INSTANCE.getInternalName() + ".class");
+                            .getResourceAsStream(ANNOTATION_INSTANCE.getInternalName() + ".class");
             ClassReader cr = new ClassReader(is);
             ClassNode cNode = new ClassNode();
             cr.accept(cNode, 0);
-            ATOMIC_FIELDS = cNode.fields != null ? cNode.fields : Collections.<FieldNode> emptyList();
+            ANNOTATION_FIELDS = cNode.fields != null ? cNode.fields : Collections.<FieldNode> emptyList();
 
             StringBuffer ctorDescriptor = new StringBuffer("(");
-            for (FieldNode field : ATOMIC_FIELDS) {
+            for (FieldNode field : ANNOTATION_FIELDS) {
                 ctorDescriptor.append(field.desc);
             }
             ctorDescriptor.append(")V");
-            ATOMIC_INSTANCE_CTOR_DESC = ctorDescriptor.toString();
+            ANNOTATION_INSTANCE_CTOR_DESC = ctorDescriptor.toString();
         } catch (IOException e) {
-            throw new RuntimeException("Error opening AtomicInstance class. Have you run GenerateAnnotationInstance?", e);
+            throw new RuntimeException("Error opening " + ANNOTATION_INSTANCE
+                    + " class. Have you run GenerateAnnotationInstance?", e);
         }
     }
 
@@ -127,19 +126,13 @@ public class ProcessAnnotations {
             System.err.println("Syntax: GenerateAnnotationInstance <annotation-class> [class files or dirs]");
             System.exit(-1);
         }
-        Class<? extends Annotation> annotationClass = (Class<? extends Annotation>) Class.forName(args[0]);
+        Class<? extends Annotation> annotationClass = Class.forName(args[0]).asSubclass(Annotation.class);
         ProcessAnnotations processor = new ProcessAnnotations(annotationClass);
         for (int i = 1; i < args.length; i++) {
             String file = args[i];
             processor.processFile(new File(file));
         }
     }
-
-//    public void processFiles(File[] files) {
-//        for (File file : files) {
-//            processFile(file);
-//        }
-//    }
 
     public void processFile(File file) {
         if (file.isDirectory()) {
@@ -164,9 +157,9 @@ public class ProcessAnnotations {
             ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 
             ClassVisitor cv = cw;
-            // Add here other visitors to run AFTER the AtomicMethodTransformer
-            cv = new AtomicMethodTransformer(cv, classFile);
-            // Add here other visitors to run BEFORE the AtomicMethodTransformer
+            // Add here other visitors to run AFTER the MethodTransformer
+            cv = new MethodTransformer(cv, classFile);
+            // Add here other visitors to run BEFORE the MethodTransformer
 
             cr.accept(cv, 0);
             writeClassFile(classFile, cw.toByteArray());
@@ -199,7 +192,7 @@ public class ProcessAnnotations {
         }
     }
 
-    class AtomicMethodTransformer extends ClassVisitor {
+    class MethodTransformer extends ClassVisitor {
         private final List<MethodNode> methods = new ArrayList<MethodNode>();
         private final List<String> advisedMethodNames = new ArrayList<String>();
         private final MethodNode advisedClInit;
@@ -207,7 +200,7 @@ public class ProcessAnnotations {
 
         private String className;
 
-        public AtomicMethodTransformer(ClassVisitor cv, File originalClassFile) {
+        public MethodTransformer(ClassVisitor cv, File originalClassFile) {
             super(ASM4, cv);
 
             classFile = originalClassFile;
@@ -233,7 +226,7 @@ public class ProcessAnnotations {
         @Override
         public void visitEnd() {
             MethodNode clInit = null;
-            boolean hasAtomic = false;
+            boolean isAnnotated = false;
             for (MethodNode mn : methods) {
                 if (mn.name.equals("<clinit>")) {
                     clInit = mn;
@@ -242,22 +235,22 @@ public class ProcessAnnotations {
 
                 if (mn.invisibleAnnotations != null) {
                     for (AnnotationNode an : mn.invisibleAnnotations) {
-                        if (an.desc.equals(ATOMIC.getDescriptor())) {
-                            //System.out.println("Method " + mn.name + " is tagged with @Atomic");
-                            hasAtomic = true;
-                            // Create new transactified method
-                            transactify(mn, an);
+                        if (an.desc.equals(ANNOTATION.getDescriptor())) {
+                            //System.out.println("Method " + mn.name + " is tagged with annotation");
+                            isAnnotated = true;
+                            // Create new advised method
+                            adviseMethod(mn, an);
                             break;
                         }
                     }
                 }
                 if (mn.visibleAnnotations != null) {
                     for (AnnotationNode an : mn.visibleAnnotations) {
-                        if (an.desc.equals(ATOMIC.getDescriptor())) {
-                            //System.out.println("Method " + mn.name + " is tagged with @Atomic");
-                            hasAtomic = true;
-                            // Create new transactified method
-                            transactify(mn, an);
+                        if (an.desc.equals(ANNOTATION.getDescriptor())) {
+                            //System.out.println("Method " + mn.name + " is tagged with annotation");
+                            isAnnotated = true;
+                            // Create new advised method
+                            adviseMethod(mn, an);
                             break;
                         }
                     }
@@ -266,7 +259,7 @@ public class ProcessAnnotations {
                 mn.accept(cv);
             }
 
-            if (hasAtomic) {
+            if (isAnnotated) {
                 // Insert <clinit> into class
                 if (clInit != null) {
                     // Merge existing clinit with our additions
@@ -288,12 +281,12 @@ public class ProcessAnnotations {
         }
 
         /**
-         * To transactify method add, part of the class Xpto, and with signature
+         * To advise method add annotated with @Annot, part of the class Xpto, and with signature
          * 
-         * @Atomic @SomethingElse public long add(Object o, int i)
-         *         we generate the following code:
+         * @Annot @SomethingElse public long add(Object o, int i)
+         *        we generate the following code:
          * 
-         *         public static [final] Advice advice$add = Advice.newAdvice();
+         *        public static [final] Advice advice$add = Advice.newAdvice();
          * 
          * @SomethingElse
          *                public long add(Object o, int i) {
@@ -321,7 +314,7 @@ public class ProcessAnnotations {
          * 
          *                Note that any annotations from the original method are removed from the advised$ version.
          **/
-        private void transactify(MethodNode mn, AnnotationNode advisedAnnotation) {
+        private void adviseMethod(MethodNode mn, AnnotationNode advisedAnnotation) {
             // Mangle name if there are multiple advised methods with the same name
             String methodName = getMethodName(mn.name);
             // Name for advice field
@@ -333,7 +326,7 @@ public class ProcessAnnotations {
             MethodVisitor advisedMethod =
                     cv.visitMethod(mn.access, mn.name, mn.desc, mn.signature, mn.exceptions.toArray(new String[0]));
 
-            // Remove @Atomic annotation and copy other annotations from the original method to the newly created method
+            // Remove advised annotation and copy other annotations from the original method to the newly created method
             if (mn.invisibleAnnotations != null) {
                 mn.invisibleAnnotations.remove(advisedAnnotation);
                 for (AnnotationNode an : mn.invisibleAnnotations) {
@@ -352,8 +345,8 @@ public class ProcessAnnotations {
             cv.visitField(ACC_PUBLIC | ACC_STATIC | ACC_FINAL, fieldName, ADVICE.getDescriptor(), null, null);
 
             // Add code to clinit to initialize the field
-            // Add default parameters from @Atomic
-            Map<String, Object> annotationElements = new HashMap<String, Object>(ATOMIC_ELEMENTS);
+            // Add default parameters from annotation
+            Map<String, Object> annotationElements = new HashMap<String, Object>(ANNOTATION_ELEMENTS);
             // Copy parameters from method annotation
             if (advisedAnnotation.values != null) {
                 Iterator<Object> it = advisedAnnotation.values.iterator();
@@ -372,19 +365,17 @@ public class ProcessAnnotations {
             advisedClInit.visitMethodInsn(INVOKESTATIC, factoryType.getInternalName(), "getInstance",
                     "()" + Type.getType(AdviceFactory.class).getDescriptor());
 
-            // Push @Atomic parameters on the stack and create AtomicInstance
-            advisedClInit.visitTypeInsn(NEW, ATOMIC_INSTANCE.getInternalName());
+            // Push annotation parameters on the stack and create AnnotationInstance
+            advisedClInit.visitTypeInsn(NEW, ANNOTATION_INSTANCE.getInternalName());
             advisedClInit.visitInsn(DUP);
-            for (FieldNode field : ATOMIC_FIELDS) {
+            for (FieldNode field : ANNOTATION_FIELDS) {
                 advisedClInit.visitLdcInsn(annotationElements.get(field.name));
             }
-            advisedClInit.visitMethodInsn(INVOKESPECIAL, ATOMIC_INSTANCE.getInternalName(), "<init>", ATOMIC_INSTANCE_CTOR_DESC);
+            advisedClInit.visitMethodInsn(INVOKESPECIAL, ANNOTATION_INSTANCE.getInternalName(), "<init>",
+                    ANNOTATION_INSTANCE_CTOR_DESC);
             // Obtain advice for this method
             advisedClInit.visitMethodInsn(INVOKEVIRTUAL, Type.getType(AdviceFactory.class).getInternalName(), "newAdvice", "("
                     + Type.getType(Annotation.class).getDescriptor() + ")" + ADVICE.getDescriptor());
-
-            //            advisedClInit.visitInsn(POP);
-//            advisedClInit.visitInsn(ACONST_NULL);
 
             advisedClInit.visitFieldInsn(PUTSTATIC, className, fieldName, ADVICE.getDescriptor());
 
@@ -483,7 +474,7 @@ public class ProcessAnnotations {
                             + (isPrimitive(returnType) ? toObject(returnType) : (returnType.equals(Type.VOID_TYPE) ? Type
                                     .getObjectType("java/lang/Void") : returnType)).getDescriptor() + ">;", "java/lang/Object",
                     new String[] { "java/util/concurrent/Callable" });
-            cw.visitSource("AtomicAnnotation Automatically Generated Class", null);
+            cw.visitSource("Advice Library Automatically Generated Class", null);
 
             // Create fields to hold arguments
             {

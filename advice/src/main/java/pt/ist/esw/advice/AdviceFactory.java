@@ -43,26 +43,4 @@ public abstract class AdviceFactory<T extends Annotation> {
     /** AdviceFactories must override this method **/
     public abstract Advice newAdvice(T annotation);
 
-    public static @interface A {
-    }
-
-    public static class M extends AdviceFactory<A> {
-
-        @Override
-        public Advice newAdvice(A annotation) {
-            return null;
-        }
-
-        public void m() {
-            new M().newAdvice(new A() {
-
-                public Class<? extends Annotation> annotationType() {
-                    // TODO Auto-generated method stub
-                    throw new UnsupportedOperationException("not yet implemented");
-                }
-
-            });
-
-        }
-    }
 }
