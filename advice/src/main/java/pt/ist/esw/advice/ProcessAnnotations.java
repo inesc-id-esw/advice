@@ -322,7 +322,7 @@ public class ProcessAnnotations {
          *                Note that any annotations from the original method are removed from the advised$ version.
          **/
         private void transactify(MethodNode mn, AnnotationNode advisedAnnotation) {
-            // Mangle name if there are multiple atomic methods with the same name
+            // Mangle name if there are multiple advised methods with the same name
             String methodName = getMethodName(mn.name);
             // Name for advice field
             String fieldName = "advice$" + methodName;
@@ -456,7 +456,7 @@ public class ProcessAnnotations {
         }
 
         private String getMethodName(String methodName) {
-            // Count number of atomic methods with same name
+            // Count number of advised methods with same name
             int count = 0;
             for (String name : advisedMethodNames) {
                 if (name.equals(methodName)) {

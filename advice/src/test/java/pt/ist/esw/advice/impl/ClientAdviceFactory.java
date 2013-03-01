@@ -51,7 +51,7 @@ public final class ClientAdviceFactory extends AdviceFactory<Deprecated> {
     }
 
     @Override
-    public Advice newAdvice(Deprecated atomic) {
+    public Advice newAdvice(Deprecated annotation) {
         return new MyAdvice();
     }
 

@@ -41,7 +41,7 @@ public abstract class AdviceFactory<T extends Annotation> {
     }
 
     /** AdviceFactories must override this method **/
-    public abstract Advice newAdvice(T atomic);
+    public abstract Advice newAdvice(T annotation);
 
     public static @interface A {
     }
@@ -49,7 +49,7 @@ public abstract class AdviceFactory<T extends Annotation> {
     public static class M extends AdviceFactory<A> {
 
         @Override
-        public Advice newAdvice(A atomic) {
+        public Advice newAdvice(A annotation) {
             return null;
         }
 
