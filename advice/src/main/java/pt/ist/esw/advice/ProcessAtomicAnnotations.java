@@ -286,7 +286,7 @@ public class ProcessAtomicAnnotations {
          *                return Xpto.atomic$add(arg0, arg1, arg2);
          *                }
          *                }
-         *                return context$add.doTransactionally(new atomicannotation$callable$add(this, o, i));
+         *                return context$add.perform(new atomicannotation$callable$add(this, o, i));
          *                }
          * 
          *                synthetic static long atomic$add(Xpto this, Object o, int i) {
@@ -388,7 +388,7 @@ public class ProcessAtomicAnnotations {
                 pos += t.getSize();
             }
             mv.visitMethodInsn(INVOKESPECIAL, callableClass, "<init>", getCallableCtorDesc(mn));
-            mv.visitMethodInsn(INVOKEINTERFACE, ATOMIC_CONTEXT.getInternalName(), "doTransactionally",
+            mv.visitMethodInsn(INVOKEINTERFACE, ATOMIC_CONTEXT.getInternalName(), "perform",
                     "(Ljava/util/concurrent/Callable;)Ljava/lang/Object;");
 
             // Return value
