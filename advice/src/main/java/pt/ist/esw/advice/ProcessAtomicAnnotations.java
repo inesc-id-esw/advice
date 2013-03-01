@@ -35,7 +35,7 @@ import static org.objectweb.asm.Opcodes.*;
 
 public class ProcessAtomicAnnotations {
     private static final Type ATOMIC = Type.getType(Atomic.class);
-    private static final Type ATOMIC_CONTEXT = Type.getType(AtomicContext.class);
+    private static final Type ATOMIC_CONTEXT = Type.getType(Advice.class);
     private static final Type ATOMIC_INSTANCE = Type.getObjectType(GenerateAtomicInstance.ATOMIC_INSTANCE);
     private static final Map<String,Object> ATOMIC_ELEMENTS;
     private static final List<FieldNode> ATOMIC_FIELDS;
@@ -219,7 +219,7 @@ public class ProcessAtomicAnnotations {
           * @Atomic @SomethingElse public long add(Object o, int i)
           * we generate the following code:
           *
-          * public static [final] AtomicContext context$add = AtomicContext.newContext();
+          * public static [final] Advice context$add = Advice.newContext();
           *
           * @SomethingElse
           * public long add(Object o, int i) {
@@ -346,7 +346,7 @@ public class ProcessAtomicAnnotations {
             if (returnType.getSort() == Type.OBJECT || returnType.getSort() == Type.ARRAY) {
                 mv.visitTypeInsn(CHECKCAST, returnType.getInternalName());
             } else if (isPrimitive(returnType)) {
-                // Return is native, we have to unbox the value from the AtomicContext
+                // Return is native, we have to unbox the value from the Advice
                 boxUnwrap(returnType, mv);
             }
             mv.visitInsn(returnType.getOpcode(IRETURN));

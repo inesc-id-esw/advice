@@ -27,6 +27,6 @@ package pt.ist.esw.advice;
 
 import java.util.concurrent.Callable;
 
-public interface AtomicContext {
+public interface Advice {
     public <V> V doTransactionally(Callable<V> method) throws Exception;
 }

@@ -34,11 +34,11 @@ import java.lang.reflect.Method;
 public final class NullContextFactory extends ContextFactory {
     private NullContextFactory() { }
 
-    public static AtomicContext newContext(Atomic atomic) {
+    public static Advice newContext(Atomic atomic) {
         try {
             Class<?> defaultFactory = Class.forName(Atomic.DEFAULT_CONTEXT_FACTORY);
             Method newContext = defaultFactory.getMethod("newContext", Atomic.class);
-            return (AtomicContext) newContext.invoke(null, atomic);
+            return (Advice) newContext.invoke(null, atomic);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("Default ContextFactory " + Atomic.DEFAULT_CONTEXT_FACTORY +
                     " was not provided, nor a custom one was specified", e);
