@@ -201,7 +201,7 @@ public class ProcessAnnotations {
 
     class AtomicMethodTransformer extends ClassVisitor {
         private final List<MethodNode> methods = new ArrayList<MethodNode>();
-        private final List<String> atomicMethodNames = new ArrayList<String>();
+        private final List<String> advisedMethodNames = new ArrayList<String>();
         private final MethodNode advisedClInit;
         private final File classFile;
 
@@ -330,21 +330,21 @@ public class ProcessAnnotations {
             String callableClass = className + "$callable$" + methodName;
 
             // Generate new method which will invoke the advice with the Callable
-            MethodVisitor atomicMethod =
+            MethodVisitor advisedMethod =
                     cv.visitMethod(mn.access, mn.name, mn.desc, mn.signature, mn.exceptions.toArray(new String[0]));
 
             // Remove @Atomic annotation and copy other annotations from the original method to the newly created method
             if (mn.invisibleAnnotations != null) {
                 mn.invisibleAnnotations.remove(atomicAnnotation);
                 for (AnnotationNode an : mn.invisibleAnnotations) {
-                    an.accept(atomicMethod.visitAnnotation(an.desc, false));
+                    an.accept(advisedMethod.visitAnnotation(an.desc, false));
                 }
 
             }
             if (mn.visibleAnnotations != null) {
                 mn.visibleAnnotations.remove(atomicAnnotation);
                 for (AnnotationNode an : mn.visibleAnnotations) {
-                    an.accept(atomicMethod.visitAnnotation(an.desc, true));
+                    an.accept(advisedMethod.visitAnnotation(an.desc, true));
                 }
             }
 
@@ -392,7 +392,7 @@ public class ProcessAnnotations {
             modifyOriginalMethod(mn);
 
             // Generate replacement method
-            generateMethodCode(mn, atomicMethod, fieldName, callableClass);
+            generateMethodCode(mn, advisedMethod, fieldName, callableClass);
 
             // Generate callable class
             generateCallable(callableClass, mn);
@@ -458,13 +458,13 @@ public class ProcessAnnotations {
         private String getMethodName(String methodName) {
             // Count number of atomic methods with same name
             int count = 0;
-            for (String name : atomicMethodNames) {
+            for (String name : advisedMethodNames) {
                 if (name.equals(methodName)) {
                     count++;
                 }
             }
             // Add another one
-            atomicMethodNames.add(methodName);
+            advisedMethodNames.add(methodName);
 
             return methodName + (count > 0 ? "$" + count : "");
         }
