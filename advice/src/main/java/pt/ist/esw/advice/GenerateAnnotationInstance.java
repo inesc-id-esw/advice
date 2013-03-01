@@ -1,5 +1,5 @@
 /*
- * AtomicAnnotation
+ * Advice Library
  * Copyright (C) 2012 INESC-ID Software Engineering Group
  * http://www.esw.inesc-id.pt
  *
