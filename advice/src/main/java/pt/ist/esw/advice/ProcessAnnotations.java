@@ -202,7 +202,7 @@ public class ProcessAnnotations {
     class AtomicMethodTransformer extends ClassVisitor {
         private final List<MethodNode> methods = new ArrayList<MethodNode>();
         private final List<String> atomicMethodNames = new ArrayList<String>();
-        private final MethodNode atomicClInit;
+        private final MethodNode advisedClInit;
         private final File classFile;
 
         private String className;
@@ -212,8 +212,8 @@ public class ProcessAnnotations {
 
             classFile = originalClassFile;
 
-            atomicClInit = new MethodNode(ACC_STATIC, "<clinit>", "()V", null, null);
-            atomicClInit.visitCode();
+            advisedClInit = new MethodNode(ACC_STATIC, "<clinit>", "()V", null, null);
+            advisedClInit.visitCode();
         }
 
         @Override
@@ -270,13 +270,13 @@ public class ProcessAnnotations {
                 // Insert <clinit> into class
                 if (clInit != null) {
                     // Merge existing clinit with our additions
-                    clInit.instructions.accept(atomicClInit);
+                    clInit.instructions.accept(advisedClInit);
                 } else {
-                    atomicClInit.visitInsn(RETURN);
+                    advisedClInit.visitInsn(RETURN);
                 }
-                atomicClInit.visitMaxs(0, 0);
-                atomicClInit.visitEnd();
-                atomicClInit.accept(cv);
+                advisedClInit.visitMaxs(0, 0);
+                advisedClInit.visitEnd();
+                advisedClInit.accept(cv);
             } else {
                 // Preserve existing <clinit>
                 if (clInit != null) {
@@ -369,24 +369,24 @@ public class ProcessAnnotations {
                 factoryType = Type.getObjectType(AdviceFactory.DEFAULT_ADVICE_FACTORY.replace('.', '/'));
             }
 
-            atomicClInit.visitMethodInsn(INVOKESTATIC, factoryType.getInternalName(), "getInstance",
+            advisedClInit.visitMethodInsn(INVOKESTATIC, factoryType.getInternalName(), "getInstance",
                     "()" + Type.getType(AdviceFactory.class).getDescriptor());
 
             // Push @Atomic parameters on the stack and create AtomicInstance
-            atomicClInit.visitTypeInsn(NEW, ATOMIC_INSTANCE.getInternalName());
-            atomicClInit.visitInsn(DUP);
+            advisedClInit.visitTypeInsn(NEW, ATOMIC_INSTANCE.getInternalName());
+            advisedClInit.visitInsn(DUP);
             for (FieldNode field : ATOMIC_FIELDS) {
-                atomicClInit.visitLdcInsn(atomicElements.get(field.name));
+                advisedClInit.visitLdcInsn(atomicElements.get(field.name));
             }
-            atomicClInit.visitMethodInsn(INVOKESPECIAL, ATOMIC_INSTANCE.getInternalName(), "<init>", ATOMIC_INSTANCE_CTOR_DESC);
+            advisedClInit.visitMethodInsn(INVOKESPECIAL, ATOMIC_INSTANCE.getInternalName(), "<init>", ATOMIC_INSTANCE_CTOR_DESC);
             // Obtain advice for this method
-            atomicClInit.visitMethodInsn(INVOKEVIRTUAL, Type.getType(AdviceFactory.class).getInternalName(), "newAdvice", "("
+            advisedClInit.visitMethodInsn(INVOKEVIRTUAL, Type.getType(AdviceFactory.class).getInternalName(), "newAdvice", "("
                     + Type.getType(Annotation.class).getDescriptor() + ")" + ADVICE.getDescriptor());
 
-            //            atomicClInit.visitInsn(POP);
-//            atomicClInit.visitInsn(ACONST_NULL);
+            //            advisedClInit.visitInsn(POP);
+//            advisedClInit.visitInsn(ACONST_NULL);
 
-            atomicClInit.visitFieldInsn(PUTSTATIC, className, fieldName, ADVICE.getDescriptor());
+            advisedClInit.visitFieldInsn(PUTSTATIC, className, fieldName, ADVICE.getDescriptor());
 
             // Repurpose original method
             modifyOriginalMethod(mn);
