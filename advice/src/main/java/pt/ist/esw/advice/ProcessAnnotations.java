@@ -297,12 +297,12 @@ public class ProcessAnnotations {
          * 
          * @SomethingElse
          *                public long add(Object o, int i) {
-         *                static final class atomicannotation$callable$add implements Callable {
+         *                static final class callable$add implements Callable {
          *                Xpto arg0;
          *                Object arg1;
          *                int arg2;
          * 
-         *                atomicannotation$callable$add(Xpto arg0, Object arg1, int arg2) {
+         *                callable$add(Xpto arg0, Object arg1, int arg2) {
          *                this.arg0 = arg0;
          *                this.arg1 = arg1;
          *                this.arg2 = arg2;
@@ -312,7 +312,7 @@ public class ProcessAnnotations {
          *                return Xpto.atomic$add(arg0, arg1, arg2);
          *                }
          *                }
-         *                return advice$add.perform(new atomicannotation$callable$add(this, o, i));
+         *                return advice$add.perform(new callable$add(this, o, i));
          *                }
          * 
          *                synthetic static long atomic$add(Xpto this, Object o, int i) {
@@ -327,7 +327,7 @@ public class ProcessAnnotations {
             // Name for advice field
             String fieldName = "advice$" + methodName;
             // Name for callable class
-            String callableClass = className + "$atomicannotation$callable$" + methodName;
+            String callableClass = className + "$callable$" + methodName;
 
             // Generate new method which will invoke the advice with the Callable
             MethodVisitor atomicMethod =
