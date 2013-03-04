@@ -64,7 +64,7 @@
                                     <mainClass>pt.ist.esw.advice.GenerateAnnotationInstance</mainClass>
                                     <arguments>
                                         <argument>${test.annotation.name}</argument>
-                                        <argument>${project.build.outputDirectory}</argument>
+                                        <argument>${project.build.testOutputDirectory}</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
