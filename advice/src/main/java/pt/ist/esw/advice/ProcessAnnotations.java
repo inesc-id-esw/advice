@@ -82,7 +82,7 @@ public class ProcessAnnotations {
     private final String ANNOTATION_INSTANCE_CTOR_DESC;
     private final Class<? extends Annotation> annotationClass;
 
-    private ProcessAnnotations(Class<? extends Annotation> annotationClass) {
+    public ProcessAnnotations(Class<? extends Annotation> annotationClass) {
         this.annotationClass = annotationClass;
         this.ANNOTATION = Type.getType(annotationClass);
         this.ANNOTATION_INSTANCE =
