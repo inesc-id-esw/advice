@@ -22,51 +22,6 @@
         <!-- <version.maven.build-helper-plugin>1.7</version.maven.build-helper-plugin> -->
     </properties>
 
-    <build>
-        <plugins>
-            <!-- Generate the Annotation Instance class and Process Annotation
-                 after compiling tests -->
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>${version.maven.exec-plugin}</version>
-                <executions>
-                    <execution>
-                        <id>generate-annotation-instance</id>
-                        <phase>process-test-classes</phase>
-                        <goals>
-                            <goal>java</goal>
-                        </goals>
-                        <configuration>
-                            <classpathScope>test</classpathScope>
-                            <mainClass>pt.ist.esw.advice.GenerateAnnotationInstance</mainClass>
-                            <arguments>
-                                <argument>${test.annotation.name}</argument>
-                                <argument>${project.build.outputDirectory}</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>process-annotations</id>
-                        <phase>process-test-classes</phase>
-                        <goals>
-                            <goal>java</goal>
-                        </goals>
-                        <configuration>
-                            <classpathScope>test</classpathScope>
-                            <mainClass>pt.ist.esw.advice.ProcessAnnotations</mainClass>
-                            <arguments>
-                                <argument>${test.annotation.name}</argument>
-                                <argument>${project.build.testOutputDirectory}</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-        </plugins>
-    </build>
-
     <dependencies>
         <dependency>
             <groupId>org.ow2.asm</groupId>
@@ -80,5 +35,60 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+    
+    <profiles>
+        <profile> <!-- This profile enables plugins that run in the process-test-classes phase unless the maven.test.skip property is present. -->
+            <id>test-plugins</id>
+
+            <activation>
+                <property><name>!maven.test.skip</name></property>
+            </activation>
+            <build>
+                <plugins>
+
+                    <!-- Generate the Annotation Instance class and Process Annotation
+                         after compiling tests -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>${version.maven.exec-plugin}</version>
+                        <executions>
+                            <execution>
+                                <id>generate-annotation-instance</id>
+                                <phase>process-test-classes</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <configuration>
+                                    <classpathScope>test</classpathScope>
+                                    <mainClass>pt.ist.esw.advice.GenerateAnnotationInstance</mainClass>
+                                    <arguments>
+                                        <argument>${test.annotation.name}</argument>
+                                        <argument>${project.build.outputDirectory}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>process-annotations</id>
+                                <phase>process-test-classes</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <configuration>
+                                    <classpathScope>test</classpathScope>
+                                    <mainClass>pt.ist.esw.advice.ProcessAnnotations</mainClass>
+                                    <arguments>
+                                        <argument>${test.annotation.name}</argument>
+                                        <argument>${project.build.testOutputDirectory}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>
