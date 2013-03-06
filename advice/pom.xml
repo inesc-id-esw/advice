@@ -36,6 +36,20 @@
         </dependency>
     </dependencies>
     
+    <build>
+        <plugins>
+            <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>2.0.2</version>
+            <configuration>
+                <source>1.6</source>
+                <target>1.6</target>
+            </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
     <profiles>
         <profile> <!-- This profile enables plugins that run in the process-test-classes phase unless the maven.test.skip property is present. -->
             <id>test-plugins</id>
