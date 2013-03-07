@@ -100,7 +100,7 @@ your POM.
                     <mainClass>pt.ist.esw.advice.ProcessAnnotations</mainClass>
                     <arguments>
                         <argument>${annotation.name}</argument>
-                        <argument>${annotation.factory.class}</argument>
+                        <argument>${advice.factory.class}</argument>
                         <argument>${project.build.outputDirectory}</argument>
                     </arguments>
                 </configuration>
@@ -111,10 +111,10 @@ your POM.
 Replace `${annotation.name}` the name fully-qualified class name of your
 annotation.
 
-Replace `${annotation.factory.class}` the name fully-qualified class name of
-your `AdviceFactory`.  If the `${annotation.factory.class}` is not provided or
-if the provided class cannot be found, them the annotation processor will look
-for the default `pt.ist.esw.advice.impl.ClientAdviceFactory`.
+Replace `${advice.factory.class}` the name fully-qualified class name of your
+`AdviceFactory`.  If the `${advice.factory.class}` is not provided or if the
+provided class cannot be found, them the annotation processor will look for
+the default `pt.ist.esw.advice.impl.ClientAdviceFactory`.
 
 # Contact
 
