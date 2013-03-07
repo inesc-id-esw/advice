@@ -40,5 +40,5 @@ public @interface Advised {
 //    boolean speculativeReadOnly() default true;
 
 //
-    Class<? extends AdviceFactory> adviceFactory() default AdvisedAdviceFactory.class;
+    Class<? extends AdviceFactory<Advised>> adviceFactory() default AdvisedAdviceFactory.class;
 }
