@@ -112,7 +112,9 @@ Replace `${annotation.name}` the name fully-qualified class name of your
 annotation.
 
 Replace `${annotation.factory.class}` the name fully-qualified class name of
-your `AdviceFactory`.
+your `AdviceFactory`.  If the `${annotation.factory.class}` is not provided or
+if the provided class cannot be found, them the annotation processor will look
+for the default `pt.ist.esw.advice.impl.ClientAdviceFactory`.
 
 # Contact
 
