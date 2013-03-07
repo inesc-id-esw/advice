@@ -1,0 +1,95 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    
+    <groupId>pt.ist.esw</groupId>
+    <artifactId>advice</artifactId>
+    <version>1.1</version>
+    <packaging>jar</packaging>
+    
+    <name>Advice via Annotation for Java</name>
+    
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        
+        <test.annotation.name>pt.ist.esw.advice.impl.Advised</test.annotation.name>
+        <!-- <test.annotation.name>java.lang.Deprecated</test.annotation.name> -->
+
+        <version.asm>4.0</version.asm>
+        <version.junit>4.11</version.junit>
+        <version.maven.exec-plugin>1.2.1</version.maven.exec-plugin>
+        <!-- <version.maven.build-helper-plugin>1.7</version.maven.build-helper-plugin> -->
+    </properties>
+
+    <build>
+        <plugins>
+            <!-- Generate the Annotation Instance class and Process Annotation
+                 after compiling tests -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>${version.maven.exec-plugin}</version>
+                <executions>
+                    <execution>
+                        <id>generate-annotation-instance</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <classpathScope>test</classpathScope>
+                            <mainClass>pt.ist.esw.advice.GenerateAnnotationInstance</mainClass>
+                            <arguments>
+                                <argument>${test.annotation.name}</argument>
+                                <argument>${project.build.outputDirectory}</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>process-annotations</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <classpathScope>test</classpathScope>
+                            <mainClass>pt.ist.esw.advice.ProcessAnnotations</mainClass>
+                            <arguments>
+                                <argument>${test.annotation.name}</argument>
+                                <argument>${project.build.testOutputDirectory}</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+        </plugins>
+    </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm-debug-all</artifactId>
+            <version>${version.asm}</version>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${version.junit}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <distributionManagement>
+        <repository>
+            <id>gh-pages</id>
+            <url>file:///${basedir}/../${project.artifactId}-pages/maven-repo/</url>
+        </repository>
+        <snapshotRepository>
+            <id>gh-pages</id>
+            <url>file:///${basedir}/../${project.artifactId}-pages/maven-repo/</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+</project>
