@@ -1,0 +1,11 @@
+markdown: rdiscount
+safe: true
+lsi: false
+pygments: true
+
+# When running jekyll on your local computer you may want change the base url
+# to point to the _site directory (full-path).  This is necessary if the
+# {baseurl} is used in any templates
+
+# baseurl: http://inesc-id-esw.github.com/advice
+
