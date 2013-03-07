@@ -22,3 +22,6 @@ advice and:
   It also creates a callable to the original advised method that is given to
   the execution of the Advice (in the `perform` method).
   
+
+Advice is distributed under the terms of the GNU LGPLv3; see the COPYING and
+COPYING.LESSER files for more details.
