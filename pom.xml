@@ -105,4 +105,28 @@
         </profile>
     </profiles>
 
+    <!--
+        note: making a release of this software on GitHub's gh-pages branch
+        requires an existing clone of such branch in a sibling directory named
+        '${project.artifactId}-pages', like this:
+
+             * ${project.artifactId}
+
+             * ${project.artifactId}-pages
+
+         Within the ${project.artifactId}-pages dir, there should be a
+         maven-repo subdir.
+    -->
+
+    <distributionManagement>
+        <repository>
+            <id>gh-pages</id>
+            <url>file:///${basedir}/../${project.artifactId}-pages/maven-repo/</url>
+        </repository>
+        <snapshotRepository>
+            <id>gh-pages</id>
+            <url>file:///${basedir}/../${project.artifactId}-pages/maven-repo/</url>
+        </snapshotRepository>
+    </distributionManagement>
+
 </project>
