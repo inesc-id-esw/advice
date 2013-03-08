@@ -87,7 +87,7 @@ public class ProcessAnnotations {
         this.annotationClass = annotationClass;
         this.ANNOTATION = Type.getType(annotationClass);
         this.ANNOTATION_INSTANCE =
-                Type.getObjectType(GenerateAnnotationInstance.ANNOTATION_INSTANCE_SLASH_PREFIX + annotationClass.getSimpleName()
+                Type.getObjectType(GenerateAnnotationInstance.ANNOTATION_INSTANCE_PACKAGE + annotationClass.getSimpleName()
                         + "Instance");
 
         // the following code was previously a static class initializer

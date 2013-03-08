@@ -27,18 +27,7 @@
 package pt.ist.esw.advice;
 
 import static java.io.File.separatorChar;
-import static org.objectweb.asm.Opcodes.ACC_FINAL;
-import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
-import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
-import static org.objectweb.asm.Opcodes.ALOAD;
-import static org.objectweb.asm.Opcodes.ARETURN;
-import static org.objectweb.asm.Opcodes.GETFIELD;
-import static org.objectweb.asm.Opcodes.ILOAD;
-import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
-import static org.objectweb.asm.Opcodes.IRETURN;
-import static org.objectweb.asm.Opcodes.PUTFIELD;
-import static org.objectweb.asm.Opcodes.RETURN;
-import static org.objectweb.asm.Opcodes.V1_6;
+import static org.objectweb.asm.Opcodes.*;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -54,21 +43,18 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
 public final class GenerateAnnotationInstance {
-    static final String ANNOTATION_INSTANCE_SLASH_PREFIX = GenerateAnnotationInstance.class.getPackage().getName().replace('.', '/') + "/";
+    protected static final String ANNOTATION_INSTANCE_PACKAGE = GenerateAnnotationInstance.class.getPackage().getName().replace('.', '/') + "/";
 
-    private final String ANNOTATION;
-    private final String ANNOTATION_INSTANCE;
+    private final String annotation;
+    private final String annotationInstance;
 
     private final Class<? extends Annotation> annotationClass;
     private final File buildDir;
 
     public GenerateAnnotationInstance(Class<? extends Annotation> annotationClass, File buildDir) {
         this.annotationClass = annotationClass;
-
-        String annotationName = annotationClass.getName();
-        this.ANNOTATION = annotationName.replace('.', '/');
-        this.ANNOTATION_INSTANCE = ANNOTATION_INSTANCE_SLASH_PREFIX + annotationClass.getSimpleName() + "Instance";
-
+        this.annotation = annotationClass.getName().replace('.', '/');
+        this.annotationInstance = ANNOTATION_INSTANCE_PACKAGE + annotationClass.getSimpleName() + "Instance";
         this.buildDir = buildDir;
     }
 
@@ -82,14 +68,13 @@ public final class GenerateAnnotationInstance {
     }
 
     public void start() throws IOException {
-
-        InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(ANNOTATION + ".class");
+        InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(annotation + ".class");
         ClassReader cr = new ClassReader(is);
         ClassNode cNode = new ClassNode();
         cr.accept(cNode, 0);
 
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        cw.visit(V1_6, ACC_PUBLIC | ACC_FINAL, ANNOTATION_INSTANCE, null, "java/lang/Object", new String[] { ANNOTATION });
+        cw.visit(V1_6, ACC_PUBLIC | ACC_FINAL, annotationInstance, null, "java/lang/Object", new String[] { annotation });
         cw.visitSource("Annotation Instance Class", null);
 
         // Generate fields
@@ -114,7 +99,7 @@ public final class GenerateAnnotationInstance {
                 Type t = Type.getReturnType(annotationElems.desc);
                 mv.visitVarInsn(ALOAD, 0);
                 mv.visitVarInsn(t.getOpcode(ILOAD), localsPos + 1);
-                mv.visitFieldInsn(PUTFIELD, ANNOTATION_INSTANCE, annotationElems.name, t.getDescriptor());
+                mv.visitFieldInsn(PUTFIELD, annotationInstance, annotationElems.name, t.getDescriptor());
                 localsPos += t.getSize();
             }
             mv.visitInsn(RETURN);
@@ -127,7 +112,7 @@ public final class GenerateAnnotationInstance {
             MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, annotationElems.name, annotationElems.desc, null, null);
             mv.visitCode();
             mv.visitVarInsn(ALOAD, 0);
-            mv.visitFieldInsn(GETFIELD, ANNOTATION_INSTANCE, annotationElems.name, getReturnTypeDescriptor(annotationElems));
+            mv.visitFieldInsn(GETFIELD, annotationInstance, annotationElems.name, getReturnTypeDescriptor(annotationElems));
             mv.visitInsn(Type.getReturnType(annotationElems.desc).getOpcode(IRETURN));
             mv.visitMaxs(0, 0);
             mv.visitEnd();
@@ -139,7 +124,7 @@ public final class GenerateAnnotationInstance {
                     cw.visitMethod(ACC_PUBLIC, "annotationType", "()Ljava/lang/Class;",
                             "()Ljava/lang/Class<+Ljava/lang/annotation/Annotation;>;", null);
             mv.visitCode();
-            mv.visitLdcInsn(Type.getType(this.annotationClass));
+            mv.visitLdcInsn(Type.getType(annotationClass));
             mv.visitInsn(ARETURN);
             mv.visitMaxs(1, 1);
             mv.visitEnd();
@@ -148,12 +133,12 @@ public final class GenerateAnnotationInstance {
         // Write Class
         FileOutputStream fos = null;
         try {
-            File parentDir = new File(buildDir, ANNOTATION_INSTANCE_SLASH_PREFIX.replace('/', separatorChar));
+            File parentDir = new File(buildDir, ANNOTATION_INSTANCE_PACKAGE.replace('/', separatorChar));
             if (!parentDir.exists() && !parentDir.mkdirs()) {
                 throw new IOException("Could not create required directory: " + parentDir);
             }
 
-            File f = new File(parentDir, this.annotationClass.getSimpleName() + "Instance.class");
+            File f = new File(parentDir, annotationClass.getSimpleName() + "Instance.class");
             fos = new FileOutputStream(f);
             fos.write(cw.toByteArray());
         } finally {
@@ -161,6 +146,7 @@ public final class GenerateAnnotationInstance {
                 try {
                     fos.close();
                 } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
             }
         }
