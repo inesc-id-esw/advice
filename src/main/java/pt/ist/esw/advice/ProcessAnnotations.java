@@ -34,6 +34,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -60,10 +62,10 @@ public class ProcessAnnotations {
     private final Map<String, Object> defaultAnnotationElements;
     private final List<FieldNode> annotationFields;
     private final String annotationInstanceCtorDesc;
-    //private final Class<? extends Annotation> annotationClass;
+    private final Class<? extends Annotation> annotationClass;
 
     public ProcessAnnotations(Class<? extends Annotation> annotationClass) {
-        //this.annotationClass = annotationClass;
+        this.annotationClass = annotationClass;
         annotation = Type.getType(annotationClass);
         annotationInstance =
                 Type.getObjectType(GenerateAnnotationInstance.getAnnotationInstanceName(annotationClass));
@@ -212,28 +214,16 @@ public class ProcessAnnotations {
                     continue;
                 }
 
-                if (mn.invisibleAnnotations != null) {
-                    for (AnnotationNode an : mn.invisibleAnnotations) {
-                        if (an.desc.equals(annotation.getDescriptor())) {
-                            //System.out.println("Method " + mn.name + " is tagged with annotation");
-                            isAnnotated = true;
-                            // Create new advised method
-                            adviseMethod(mn, an);
-                            break;
-                        }
+                for (AnnotationNode an : getAnnotations(mn)) {
+                    if (an.desc.equals(annotation.getDescriptor())) {
+                        //System.out.println("Method " + mn.name + " is tagged with annotation");
+                        isAnnotated = true;
+                        // Create new advised method
+                        adviseMethod(mn, an);
+                        break;
                     }
                 }
-                if (mn.visibleAnnotations != null) {
-                    for (AnnotationNode an : mn.visibleAnnotations) {
-                        if (an.desc.equals(annotation.getDescriptor())) {
-                            //System.out.println("Method " + mn.name + " is tagged with annotation");
-                            isAnnotated = true;
-                            // Create new advised method
-                            adviseMethod(mn, an);
-                            break;
-                        }
-                    }
-                }
+
                 // Visit method, so it will be present on the output class
                 mn.accept(cv);
             }
@@ -257,6 +247,18 @@ public class ProcessAnnotations {
             }
 
             cv.visitEnd();
+        }
+
+        /**
+         * Returns the invisible or visible annotations list, depending on the RetentionPolicy of the client
+         * annotation.
+         **/
+        private List<AnnotationNode> getAnnotations(MethodNode mn) {
+            Retention retAnnot = annotationClass.getAnnotation(Retention.class);
+            RetentionPolicy policy = retAnnot == null ? RetentionPolicy.CLASS : retAnnot.value();
+            List<AnnotationNode> list = policy == RetentionPolicy.CLASS ?
+                    mn.invisibleAnnotations : mn.visibleAnnotations;
+            return list != null ? list : Collections.<AnnotationNode>emptyList();
         }
 
         /**
@@ -304,15 +306,13 @@ public class ProcessAnnotations {
                     cv.visitMethod(mn.access, mn.name, mn.desc, mn.signature, mn.exceptions.toArray(new String[0]));
 
             // Remove advised annotation and copy other annotations from the original method to the newly created method
+            getAnnotations(mn).remove(advisedAnnotation);
             if (mn.invisibleAnnotations != null) {
-                mn.invisibleAnnotations.remove(advisedAnnotation);
                 for (AnnotationNode an : mn.invisibleAnnotations) {
                     an.accept(advisedMethod.visitAnnotation(an.desc, false));
                 }
-
             }
             if (mn.visibleAnnotations != null) {
-                mn.visibleAnnotations.remove(advisedAnnotation);
                 for (AnnotationNode an : mn.visibleAnnotations) {
                     an.accept(advisedMethod.visitAnnotation(an.desc, true));
                 }
