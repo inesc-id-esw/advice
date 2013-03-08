@@ -36,9 +36,13 @@ public abstract class AdviceFactory<T extends Annotation> {
      **/
     public static final String DEFAULT_ADVICE_FACTORY = "pt.ist.esw.advice.impl.ClientAdviceFactory";
 
-    /** AdviceFactories must override this method **/
-    public static <T extends Annotation> AdviceFactory<T> getInstance() {
-        throw new UnsupportedOperationException("Clients must provide an AdviceFactory with a 'getInstance()' method.");
+    /**
+     * AdviceFactories must override this method.
+     * Note that replacing AdviceFactory<?> with a covariant return type may not always work, as not all java compilers
+     * (some versions of javac, for instance) emit the needed bridge methods for it to work with the advice library.
+     **/
+    public static AdviceFactory<?> getInstance() {
+        throw new UnsupportedOperationException("Clients must provide an AdviceFactory with a 'AdviceFactory getInstance()' method.");
     }
 
     /** AdviceFactories must override this method **/
