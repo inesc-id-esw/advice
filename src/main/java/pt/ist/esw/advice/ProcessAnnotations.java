@@ -283,37 +283,35 @@ public class ProcessAnnotations {
 
         /**
          * To advise method add annotated with @Annot, part of the class Xpto, and with signature
-         * 
          * @Annot @SomethingElse public long add(Object o, int i)
-         *        we generate the following code:
-         * 
-         *        public static [final] Advice advice$add = Advice.newAdvice();
-         * 
-         * @SomethingElse
-         *                public long add(Object o, int i) {
-         *                static final class callable$add implements Callable {
-         *                Xpto arg0;
-         *                Object arg1;
-         *                int arg2;
-         * 
-         *                callable$add(Xpto arg0, Object arg1, int arg2) {
-         *                this.arg0 = arg0;
-         *                this.arg1 = arg1;
-         *                this.arg2 = arg2;
-         *                }
-         * 
-         *                public Object call() {
-         *                return Xpto.advised$add(arg0, arg1, arg2);
-         *                }
-         *                }
-         *                return advice$add.perform(new callable$add(this, o, i));
-         *                }
-         * 
-         *                synthetic static long advised$add(Xpto this, Object o, int i) {
-         *                // original method
-         *                }
-         * 
-         *                Note that any annotations from the original method are removed from the advised$ version.
+         * we generate the following code:
+         *
+         * public static [final] Advice advice$add = ClientAdviceFactory.getInstance().newAdvice(annotation);
+         *
+         * @SomethingElse public long add(Object o, int i) {
+         *     static final class callable$add implements Callable {
+         *         Xpto arg0;
+         *         Object arg1;
+         *         int arg2;
+         *
+         *         callable$add(Xpto arg0, Object arg1, int arg2) {
+         *             this.arg0 = arg0;
+         *             this.arg1 = arg1;
+         *             this.arg2 = arg2;
+         *         }
+         *
+         *         public Object call() {
+         *             return Xpto.advised$add(arg0, arg1, arg2);
+         *         }
+         *     }
+         *     return advice$add.perform(new callable$add(this, o, i));
+         * }
+         *
+         * synthetic static long advised$add(Xpto this, Object o, int i) {
+         *     // original method
+         * }
+         *
+         * Note that any annotations from the original method are removed from the advised$ version.
          **/
         private void adviseMethod(MethodNode mn, AnnotationNode advisedAnnotation) {
             // Mangle name if there are multiple advised methods with the same name
