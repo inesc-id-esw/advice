@@ -26,30 +26,7 @@
  */
 package pt.ist.esw.advice;
 
-import static org.objectweb.asm.Opcodes.ACC_FINAL;
-import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
-import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
-import static org.objectweb.asm.Opcodes.ACC_STATIC;
-import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
-import static org.objectweb.asm.Opcodes.ACONST_NULL;
-import static org.objectweb.asm.Opcodes.ALOAD;
-import static org.objectweb.asm.Opcodes.ARETURN;
-import static org.objectweb.asm.Opcodes.ASM4;
-import static org.objectweb.asm.Opcodes.CHECKCAST;
-import static org.objectweb.asm.Opcodes.DUP;
-import static org.objectweb.asm.Opcodes.GETFIELD;
-import static org.objectweb.asm.Opcodes.GETSTATIC;
-import static org.objectweb.asm.Opcodes.ILOAD;
-import static org.objectweb.asm.Opcodes.INVOKEINTERFACE;
-import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
-import static org.objectweb.asm.Opcodes.INVOKESTATIC;
-import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
-import static org.objectweb.asm.Opcodes.IRETURN;
-import static org.objectweb.asm.Opcodes.NEW;
-import static org.objectweb.asm.Opcodes.PUTFIELD;
-import static org.objectweb.asm.Opcodes.PUTSTATIC;
-import static org.objectweb.asm.Opcodes.RETURN;
-import static org.objectweb.asm.Opcodes.V1_6;
+import static org.objectweb.asm.Opcodes.*;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -75,49 +52,49 @@ import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
 
 public class ProcessAnnotations {
-    private final Type ANNOTATION;
     private final Type ADVICE = Type.getType(Advice.class);
-    private final Type ANNOTATION_INSTANCE;
-    private final Map<String, Object> ANNOTATION_ELEMENTS;
-    private final List<FieldNode> ANNOTATION_FIELDS;
-    private final String ANNOTATION_INSTANCE_CTOR_DESC;
-    private final Class<? extends Annotation> annotationClass;
+
+    private final Type annotation;
+    private final Type annotationInstance;
+
+    private final Map<String, Object> defaultAnnotationElements;
+    private final List<FieldNode> annotationFields;
+    private final String annotationInstanceCtorDesc;
+    //private final Class<? extends Annotation> annotationClass;
 
     public ProcessAnnotations(Class<? extends Annotation> annotationClass) {
-        this.annotationClass = annotationClass;
-        this.ANNOTATION = Type.getType(annotationClass);
-        this.ANNOTATION_INSTANCE =
-                Type.getObjectType(GenerateAnnotationInstance.ANNOTATION_INSTANCE_PACKAGE + annotationClass.getSimpleName()
-                        + "Instance");
+        //this.annotationClass = annotationClass;
+        annotation = Type.getType(annotationClass);
+        annotationInstance =
+                Type.getObjectType(GenerateAnnotationInstance.getAnnotationInstanceName(annotationClass));
 
-        // the following code was previously a static class initializer
         Map<String, Object> annotationElements = new HashMap<String, Object>();
-        for (java.lang.reflect.Method element : this.annotationClass.getDeclaredMethods()) {
+        for (java.lang.reflect.Method element : annotationClass.getDeclaredMethods()) {
             Object defaultValue = element.getDefaultValue();
             if (defaultValue instanceof Class) {
                 defaultValue = Type.getType((Class<?>) defaultValue);
             }
             annotationElements.put(element.getName(), defaultValue);
         }
-        ANNOTATION_ELEMENTS = Collections.unmodifiableMap(annotationElements);
+        defaultAnnotationElements = Collections.unmodifiableMap(annotationElements);
 
         try {
             InputStream is =
                     Thread.currentThread().getContextClassLoader()
-                            .getResourceAsStream(ANNOTATION_INSTANCE.getInternalName() + ".class");
+                            .getResourceAsStream(annotationInstance.getInternalName() + ".class");
             ClassReader cr = new ClassReader(is);
             ClassNode cNode = new ClassNode();
             cr.accept(cNode, 0);
-            ANNOTATION_FIELDS = cNode.fields != null ? cNode.fields : Collections.<FieldNode> emptyList();
+            annotationFields = cNode.fields != null ? cNode.fields : Collections.<FieldNode> emptyList();
 
             StringBuffer ctorDescriptor = new StringBuffer("(");
-            for (FieldNode field : ANNOTATION_FIELDS) {
+            for (FieldNode field : annotationFields) {
                 ctorDescriptor.append(field.desc);
             }
             ctorDescriptor.append(")V");
-            ANNOTATION_INSTANCE_CTOR_DESC = ctorDescriptor.toString();
+            annotationInstanceCtorDesc = ctorDescriptor.toString();
         } catch (IOException e) {
-            throw new RuntimeException("Error opening " + ANNOTATION_INSTANCE
+            throw new RuntimeException("Error opening " + annotationInstance
                     + " class. Have you run GenerateAnnotationInstance?", e);
         }
     }
@@ -130,8 +107,7 @@ public class ProcessAnnotations {
         Class<? extends Annotation> annotationClass = Class.forName(args[0]).asSubclass(Annotation.class);
         ProcessAnnotations processor = new ProcessAnnotations(annotationClass);
         for (int i = 1; i < args.length; i++) {
-            String file = args[i];
-            processor.processFile(new File(file));
+            processor.processFile(new File(args[i]));
         }
     }
 
@@ -171,6 +147,7 @@ public class ProcessAnnotations {
                 try {
                     is.close();
                 } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
         }
@@ -188,12 +165,13 @@ public class ProcessAnnotations {
                 try {
                     fos.close();
                 } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
         }
     }
 
-    class MethodTransformer extends ClassVisitor {
+    private class MethodTransformer extends ClassVisitor {
         private final List<MethodNode> methods = new ArrayList<MethodNode>();
         private final List<String> advisedMethodNames = new ArrayList<String>();
         private final MethodNode advisedClInit;
@@ -236,7 +214,7 @@ public class ProcessAnnotations {
 
                 if (mn.invisibleAnnotations != null) {
                     for (AnnotationNode an : mn.invisibleAnnotations) {
-                        if (an.desc.equals(ANNOTATION.getDescriptor())) {
+                        if (an.desc.equals(annotation.getDescriptor())) {
                             //System.out.println("Method " + mn.name + " is tagged with annotation");
                             isAnnotated = true;
                             // Create new advised method
@@ -247,7 +225,7 @@ public class ProcessAnnotations {
                 }
                 if (mn.visibleAnnotations != null) {
                     for (AnnotationNode an : mn.visibleAnnotations) {
-                        if (an.desc.equals(ANNOTATION.getDescriptor())) {
+                        if (an.desc.equals(annotation.getDescriptor())) {
                             //System.out.println("Method " + mn.name + " is tagged with annotation");
                             isAnnotated = true;
                             // Create new advised method
@@ -345,7 +323,7 @@ public class ProcessAnnotations {
 
             // Add code to clinit to initialize the field
             // Add default parameters from annotation
-            Map<String, Object> annotationElements = new HashMap<String, Object>(ANNOTATION_ELEMENTS);
+            Map<String, Object> annotationElements = new HashMap<String, Object>(defaultAnnotationElements);
             // Copy parameters from method annotation
             if (advisedAnnotation.values != null) {
                 Iterator<Object> it = advisedAnnotation.values.iterator();
@@ -365,13 +343,13 @@ public class ProcessAnnotations {
                     "()" + Type.getType(AdviceFactory.class).getDescriptor());
 
             // Push annotation parameters on the stack and create AnnotationInstance
-            advisedClInit.visitTypeInsn(NEW, ANNOTATION_INSTANCE.getInternalName());
+            advisedClInit.visitTypeInsn(NEW, annotationInstance.getInternalName());
             advisedClInit.visitInsn(DUP);
-            for (FieldNode field : ANNOTATION_FIELDS) {
+            for (FieldNode field : annotationFields) {
                 advisedClInit.visitLdcInsn(annotationElements.get(field.name));
             }
-            advisedClInit.visitMethodInsn(INVOKESPECIAL, ANNOTATION_INSTANCE.getInternalName(), "<init>",
-                    ANNOTATION_INSTANCE_CTOR_DESC);
+            advisedClInit.visitMethodInsn(INVOKESPECIAL, annotationInstance.getInternalName(), "<init>",
+                    annotationInstanceCtorDesc);
             // Obtain advice for this method
             advisedClInit.visitMethodInsn(INVOKEVIRTUAL, Type.getType(AdviceFactory.class).getInternalName(), "newAdvice", "("
                     + Type.getType(Annotation.class).getDescriptor() + ")" + ADVICE.getDescriptor());
@@ -461,14 +439,10 @@ public class ProcessAnnotations {
 
         private void generateCallable(String callableClass, MethodNode mn) {
             Type returnType = Type.getReturnType(mn.desc);
-
             Type[] arguments = Type.getArgumentTypes(mn.desc);
 
             ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-            cw.visit(
-                    V1_6,
-                    ACC_FINAL,
-                    callableClass,
+            cw.visit(V1_6, ACC_FINAL, callableClass,
                     "Ljava/lang/Object;Ljava/util/concurrent/Callable<"
                             + (isPrimitive(returnType) ? toObject(returnType) : (returnType.equals(Type.VOID_TYPE) ? Type
                                     .getObjectType("java/lang/Void") : returnType)).getDescriptor() + ">;", "java/lang/Object",
@@ -504,9 +478,6 @@ public class ProcessAnnotations {
 
             // Create call method
             {
-                // Note: Usually when in Java you implement an interface with generics, such as Callable<Xpto>,
-                //      javac generates a Xpto call() method and an Object call() tagged as "public bridge synthetic"
-                //      that calls the previous one. Here, we generate the non-generic version immediately.
                 MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "call", "()Ljava/lang/Object;", null, null);
                 mv.visitCode();
                 int fieldPos = 0;
@@ -525,16 +496,16 @@ public class ProcessAnnotations {
                 mv.visitEnd();
             }
 
-            // Write the callable class file in the same directory as the original class file
+            // Write the callable class file in the same directory (package) as the original class file
             String callableFileName = callableClass.substring(Math.max(callableClass.lastIndexOf('/'), 0)) + ".class";
             writeClassFile(new File(classFile.getParent() + File.separatorChar + callableFileName), cw.toByteArray());
         }
 
-        private final Object[][] primitiveWrappers = new Object[][] { { "java/lang/Boolean", Type.BOOLEAN_TYPE },
-                { "java/lang/Byte", Type.BYTE_TYPE }, { "java/lang/Character", Type.CHAR_TYPE },
-                { "java/lang/Short", Type.SHORT_TYPE }, { "java/lang/Integer", Type.INT_TYPE },
-                { "java/lang/Long", Type.LONG_TYPE }, { "java/lang/Float", Type.FLOAT_TYPE },
-                { "java/lang/Double", Type.DOUBLE_TYPE } };
+        private final Object[][] primitiveWrappers = new Object[][] {
+                { "java/lang/Boolean", Type.BOOLEAN_TYPE }, { "java/lang/Byte", Type.BYTE_TYPE },
+                { "java/lang/Character", Type.CHAR_TYPE }, { "java/lang/Short", Type.SHORT_TYPE },
+                { "java/lang/Integer", Type.INT_TYPE }, { "java/lang/Long", Type.LONG_TYPE },
+                { "java/lang/Float", Type.FLOAT_TYPE }, { "java/lang/Double", Type.DOUBLE_TYPE } };
 
         private Type toObject(Type primitiveType) {
             for (Object[] map : primitiveWrappers) {

@@ -43,7 +43,7 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
 public final class GenerateAnnotationInstance {
-    protected static final String ANNOTATION_INSTANCE_PACKAGE = GenerateAnnotationInstance.class.getPackage().getName().replace('.', '/') + "/";
+    private static final String ANNOTATION_INSTANCE_PACKAGE = GenerateAnnotationInstance.class.getPackage().getName().replace('.', '/') + "/";
 
     private final String annotation;
     private final String annotationInstance;
@@ -53,8 +53,8 @@ public final class GenerateAnnotationInstance {
 
     public GenerateAnnotationInstance(Class<? extends Annotation> annotationClass, File buildDir) {
         this.annotationClass = annotationClass;
-        this.annotation = annotationClass.getName().replace('.', '/');
-        this.annotationInstance = ANNOTATION_INSTANCE_PACKAGE + annotationClass.getSimpleName() + "Instance";
+        annotation = annotationClass.getName().replace('.', '/');
+        annotationInstance = getAnnotationInstanceName(annotationClass);
         this.buildDir = buildDir;
     }
 
@@ -146,7 +146,7 @@ public final class GenerateAnnotationInstance {
                 try {
                     fos.close();
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    e.printStackTrace();
                 }
             }
         }
@@ -154,6 +154,10 @@ public final class GenerateAnnotationInstance {
 
     private String getReturnTypeDescriptor(MethodNode mNode) {
         return Type.getReturnType(mNode.desc).getDescriptor();
+    }
+
+    protected static String getAnnotationInstanceName(Class<? extends Annotation> annotationClass) {
+        return ANNOTATION_INSTANCE_PACKAGE + annotationClass.getSimpleName() + "Instance";
     }
 
 }
