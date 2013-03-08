@@ -72,6 +72,9 @@ public class ProcessAnnotations {
 
         Map<String, Object> annotationElements = new HashMap<String, Object>();
         for (java.lang.reflect.Method element : annotationClass.getDeclaredMethods()) {
+            if (element.getReturnType().isArray()) {
+                throw new Error("FIXME: Annotations containing arrays are not yet supported");
+            }
             Object defaultValue = element.getDefaultValue();
             if (defaultValue instanceof Class) {
                 defaultValue = Type.getType((Class<?>) defaultValue);
