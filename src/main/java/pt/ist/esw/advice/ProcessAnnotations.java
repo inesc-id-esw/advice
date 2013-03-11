@@ -349,7 +349,16 @@ public class ProcessAnnotations {
             advisedClInit.visitTypeInsn(NEW, annotationInstance.getInternalName());
             advisedClInit.visitInsn(DUP);
             for (FieldNode field : annotationFields) {
-                advisedClInit.visitLdcInsn(annotationElements.get(field.name));
+                // Support for enums
+                if (fieldIsEnum(field)) {
+                    // ASM supplies enums as String[], while the defaults read by reflection are Enum instances
+                    Object value = annotationElements.get(field.name);
+                    Enum<?> enumValue = value instanceof String[] ? getEnumElement((String[]) value) : (Enum<?>) value;
+                    Type enumType = Type.getType(enumValue.getClass());
+                    advisedClInit.visitFieldInsn(GETSTATIC, enumType.getInternalName(), enumValue.name(), enumType.getDescriptor());
+                } else {
+                    advisedClInit.visitLdcInsn(annotationElements.get(field.name));
+                }
             }
             advisedClInit.visitMethodInsn(INVOKESPECIAL, annotationInstance.getInternalName(), "<init>",
                     annotationInstanceCtorDesc);
@@ -535,6 +544,23 @@ public class ProcessAnnotations {
             mv.visitTypeInsn(CHECKCAST, objectType.getInternalName());
             mv.visitMethodInsn(INVOKEVIRTUAL, objectType.getInternalName(), primitiveType.getClassName() + "Value", "()"
                     + primitiveType.getDescriptor());
+        }
+
+        private boolean fieldIsEnum(FieldNode field) {
+            return field.desc.charAt(0) == 'L' && !field.desc.equals("Ljava/lang/Object;")
+                    && !field.desc.equals("Ljava/lang/String;") && !field.desc.equals("Ljava/lang/Class;");
+        }
+
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        private Enum<?> getEnumElement(String[] enumInfo) {
+            try {
+                Class<? extends Enum> enumClass = Class.forName(
+                        enumInfo[0].substring(1,enumInfo[0].length()-1).replace('/', '.'))
+                            .asSubclass(Enum.class);
+                return Enum.valueOf(enumClass, enumInfo[1]);
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
