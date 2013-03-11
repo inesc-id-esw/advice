@@ -310,16 +310,7 @@ public class ProcessAnnotations {
 
             // Remove advised annotation and copy other annotations from the original method to the newly created method
             getAnnotations(mn).remove(advisedAnnotation);
-            if (mn.invisibleAnnotations != null) {
-                for (AnnotationNode an : mn.invisibleAnnotations) {
-                    an.accept(advisedMethod.visitAnnotation(an.desc, false));
-                }
-            }
-            if (mn.visibleAnnotations != null) {
-                for (AnnotationNode an : mn.visibleAnnotations) {
-                    an.accept(advisedMethod.visitAnnotation(an.desc, true));
-                }
-            }
+            copyAnnotations(mn, advisedMethod);
 
             // Create field to save advice
             cv.visitField(ACC_PUBLIC | ACC_STATIC | ACC_FINAL, fieldName, ADVICE.getDescriptor(), null, null);
@@ -378,6 +369,41 @@ public class ProcessAnnotations {
             generateCallable(callableClass, mn);
         }
 
+        private void copyAnnotations(MethodNode mn, MethodVisitor advisedMethod) {
+            // InvisibleAnnotations
+            if (mn.invisibleAnnotations != null) {
+                for (AnnotationNode an : mn.invisibleAnnotations) {
+                    an.accept(advisedMethod.visitAnnotation(an.desc, false));
+                }
+            }
+            // VisibleAnnotations
+            if (mn.visibleAnnotations != null) {
+                for (AnnotationNode an : mn.visibleAnnotations) {
+                    an.accept(advisedMethod.visitAnnotation(an.desc, true));
+                }
+            }
+            // InvisibleParameterAnnotations
+            if (mn.invisibleParameterAnnotations != null) {
+                for (int i = 0; i < mn.invisibleParameterAnnotations.length; i++) {
+                    if (mn.invisibleParameterAnnotations[i] != null) {
+                        for (AnnotationNode an : mn.invisibleParameterAnnotations[i]) {
+                            an.accept(advisedMethod.visitParameterAnnotation(i, an.desc, false));
+                        }
+                    }
+                }
+            }
+            // VisibleParameterAnnotations
+            if (mn.visibleParameterAnnotations != null) {
+                for (int i = 0; i < mn.visibleParameterAnnotations.length; i++) {
+                    if (mn.visibleParameterAnnotations[i] != null) {
+                        for (AnnotationNode an : mn.visibleParameterAnnotations[i]) {
+                            an.accept(advisedMethod.visitParameterAnnotation(i, an.desc, true));
+                        }
+                    }
+                }
+            }
+        }
+
         private void modifyOriginalMethod(MethodNode mn) {
             // Rename original method
             mn.name = "advised$" + mn.name;
@@ -388,6 +414,13 @@ public class ProcessAnnotations {
             mn.access &= ~ACC_PRIVATE & ~ACC_PUBLIC;
             // Also mark it as synthetic, so Java tools ignore it
             mn.access |= ACC_SYNTHETIC;
+            // Check for, and clear any attributes seen
+            if (mn.attrs != null) {
+                System.err.println("WARNING: Modified method " + mn.name + " has non-standard attributes");
+            }
+            // Clear parameter annotations
+            mn.visibleParameterAnnotations = null;
+            mn.invisibleParameterAnnotations = null;
 
             if (!isStatic(mn)) {
                 // Convert original method to static method with instance as first argument
