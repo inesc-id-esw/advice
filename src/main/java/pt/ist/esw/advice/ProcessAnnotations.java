@@ -105,13 +105,18 @@ public class ProcessAnnotations {
     }
 
     public static void main(final String args[]) throws Exception {
-        ProcessAnnotations processor = new ProcessAnnotations(new ProgramArgs(args));
-        for (int i = 1; i < args.length; i++) {
-            processor.processFile(new File(args[i]));
+        ProgramArgs progArgs = new ProgramArgs(args);
+        ProcessAnnotations processor = new ProcessAnnotations(progArgs);
+        processor.process();
+    }
+    
+    public void process() {
+        for (File f : args.fileList) {
+            processFile(f);
         }
     }
 
-    public void processFile(File file) {
+    protected void processFile(File file) {
         if (file.isDirectory()) {
             for (File subFile : file.listFiles()) {
                 processFile(subFile);
@@ -602,10 +607,19 @@ public class ProcessAnnotations {
         Class<? extends AdviceFactory> annotationFactoryClass;
         List<File> fileList = new ArrayList<File>();
 
-        public ProgramArgs(Class<? extends Annotation> annotationClass, Class<? extends AdviceFactory> annotationFactoryClass, List<File> fileList) {
+        public ProgramArgs(Class<? extends Annotation> annotationClass, Class<? extends AdviceFactory> annotationFactoryClass) {
             this.annotationClass = annotationClass;
             this.annotationFactoryClass = annotationFactoryClass;
-            this.fileList = fileList;
+        }       
+            
+        public ProgramArgs(Class<? extends Annotation> annotationClass, Class<? extends AdviceFactory> annotationFactoryClass, File file) {
+            this(annotationClass, annotationFactoryClass);
+            this.fileList.add(file);
+        }
+        
+        public ProgramArgs(Class<? extends Annotation> annotationClass, Class<? extends AdviceFactory> annotationFactoryClass, List<File> fileList) {
+            this(annotationClass, annotationFactoryClass);
+            this.fileList.addAll(fileList);
         }
         
         public ProgramArgs(String[] args) throws Exception {
