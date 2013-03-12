@@ -19,9 +19,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         
-        <test.annotation.name>pt.ist.esw.advice.impl.Advised</test.annotation.name>
-        <!-- <test.annotation.name>java.lang.Deprecated</test.annotation.name> -->
-
         <version.asm>4.0</version.asm>
         <version.junit>4.11</version.junit>
         <version.maven.exec-plugin>1.2.1</version.maven.exec-plugin>
@@ -66,15 +63,18 @@
             <build>
                 <plugins>
 
-                    <!-- Generate the Annotation Instance class and Process Annotation
-                         after compiling tests -->
+                    <!-- Generate the Annotation Instance classes and Process
+                         Annotations after compiling tests -->
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
                         <version>${version.maven.exec-plugin}</version>
                         <executions>
+                            <!-- MyAnnotationWithProvidedFactory. In this
+                                 case, the annotation itself defines the
+                                 factory to use. -->
                             <execution>
-                                <id>generate-annotation-instance</id>
+                                <id>generate-annotation-instance-1</id>
                                 <phase>process-test-classes</phase>
                                 <goals>
                                     <goal>java</goal>
@@ -83,13 +83,13 @@
                                     <classpathScope>test</classpathScope>
                                     <mainClass>pt.ist.esw.advice.GenerateAnnotationInstance</mainClass>
                                     <arguments>
-                                        <argument>${test.annotation.name}</argument>
+                                        <argument>pt.ist.esw.advice.impl.MyAnnotationWithProvidedFactory</argument>
                                         <argument>${project.build.testOutputDirectory}</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
                             <execution>
-                                <id>process-annotations</id>
+                                <id>process-annotation-1</id>
                                 <phase>process-test-classes</phase>
                                 <goals>
                                     <goal>java</goal>
@@ -98,11 +98,89 @@
                                     <classpathScope>test</classpathScope>
                                     <mainClass>pt.ist.esw.advice.ProcessAnnotations</mainClass>
                                     <arguments>
-                                        <argument>${test.annotation.name}</argument>
+                                        <argument>-a</argument>
+                                        <argument>pt.ist.esw.advice.impl.MyAnnotationWithProvidedFactory</argument>
                                         <argument>${project.build.testOutputDirectory}</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
+
+                            <!-- Deprecated annotation.  In this case the
+                                 annotation does not define a factory, and we
+                                 name the factory to use. -->
+                            <execution>
+                                <id>generate-annotation-instance-2</id>
+                                <phase>process-test-classes</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <configuration>
+                                    <classpathScope>test</classpathScope>
+                                    <mainClass>pt.ist.esw.advice.GenerateAnnotationInstance</mainClass>
+                                    <arguments>
+                                        <argument>java.lang.Deprecated</argument>
+                                        <argument>${project.build.testOutputDirectory}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>process-annotation-2</id>
+                                <phase>process-test-classes</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <configuration>
+                                    <classpathScope>test</classpathScope>
+                                    <mainClass>pt.ist.esw.advice.ProcessAnnotations</mainClass>
+                                    <arguments>
+                                        <argument>-a</argument>
+                                        <argument>java.lang.Deprecated</argument>
+                                        <argument>-f</argument>
+                                        <argument>pt.ist.esw.advice.impl.DeprecatedAdviceFactory</argument>
+                                        <argument>${project.build.testOutputDirectory}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+
+                            <!-- MyAnnotationWithDefaults annotation.  In this
+                                 case the annotation does not define a
+                                 factory, and we name the factory to use (we
+                                 just happened to use the default name that is
+                                 used if none is specified neither in the
+                                 annotation nor in the command line:
+                                 pt.ist.esw.advice.impl.ClientAdviceFactory. -->
+                            <execution>
+                                <id>generate-annotation-instance-3</id>
+                                <phase>process-test-classes</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <configuration>
+                                    <classpathScope>test</classpathScope>
+                                    <mainClass>pt.ist.esw.advice.GenerateAnnotationInstance</mainClass>
+                                    <arguments>
+                                        <argument>pt.ist.esw.advice.impl.MyAnnotationWithDefaults</argument>
+                                        <argument>${project.build.testOutputDirectory}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>process-annotation-3</id>
+                                <phase>process-test-classes</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <configuration>
+                                    <classpathScope>test</classpathScope>
+                                    <mainClass>pt.ist.esw.advice.ProcessAnnotations</mainClass>
+                                    <arguments>
+                                        <argument>-a</argument>
+                                        <argument>pt.ist.esw.advice.impl.MyAnnotationWithDefaults</argument>
+                                        <argument>${project.build.testOutputDirectory}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+
                         </executions>
                     </plugin>
 

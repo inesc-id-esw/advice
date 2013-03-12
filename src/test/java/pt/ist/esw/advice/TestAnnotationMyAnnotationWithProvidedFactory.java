@@ -24,37 +24,48 @@
  * 1000 - 029 Lisboa
  * Portugal
  */
-package pt.ist.esw.advice.impl;
+package pt.ist.esw.advice;
 
-import java.util.concurrent.Callable;
+import static org.junit.Assert.assertEquals;
 
-import pt.ist.esw.advice.Advice;
-import pt.ist.esw.advice.AdviceFactory;
+import org.junit.Before;
+import org.junit.Test;
 
-public final class ClientAdviceFactory extends AdviceFactory<MyAnnotationWithDefaults> {
+import pt.ist.esw.advice.impl.MyAnnotationWithProvidedFactory;
 
-    public static class MyAdvice implements Advice {
+/**
+ *
+ */
+public class TestAnnotationMyAnnotationWithProvidedFactory {
 
-        @Override
-        public <V> V perform(Callable<V> method) throws Exception {
-            method.call();
-            return method.call();
+    public int i;
 
-        }
+    @Before
+    public void resetCounter() {
+        i = 0;
     }
 
-    private ClientAdviceFactory() {
+    @Test
+    public void testAdviceRunsOnce() {
+        assertEquals(0, i);
+        // run inc() advised, which should run it twice
+        inc();
+        assertEquals(2, i);
     }
 
-    private final static ClientAdviceFactory instance = new ClientAdviceFactory();
-
-    public static AdviceFactory<MyAnnotationWithDefaults> getInstance() {
-        return instance;
+    @Test
+    public void testAdviceRunsTwice() {
+        assertEquals(0, i);
+        // run inc() advised, which should run it twice
+        inc();
+        // run inc() advised, which should run it twice
+        inc();
+        assertEquals(4, i);
     }
 
-    @Override
-    public Advice newAdvice(MyAnnotationWithDefaults annotation) {
-        return new MyAdvice();
+    @MyAnnotationWithProvidedFactory
+    private void inc() {
+        i++;
     }
 
 }

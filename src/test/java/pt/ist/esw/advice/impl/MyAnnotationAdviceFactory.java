@@ -31,7 +31,7 @@ import java.util.concurrent.Callable;
 import pt.ist.esw.advice.Advice;
 import pt.ist.esw.advice.AdviceFactory;
 
-public final class AdvisedAdviceFactory extends AdviceFactory<Advised> {
+public final class MyAnnotationAdviceFactory extends AdviceFactory<MyAnnotationWithProvidedFactory> {
 
     public static class MyOtherAdvice implements Advice {
 
@@ -41,17 +41,17 @@ public final class AdvisedAdviceFactory extends AdviceFactory<Advised> {
         }
     }
 
-    private AdvisedAdviceFactory() {
+    private MyAnnotationAdviceFactory() {
     }
 
-    private final static AdvisedAdviceFactory instance = new AdvisedAdviceFactory();
+    private final static MyAnnotationAdviceFactory instance = new MyAnnotationAdviceFactory();
 
-    public static AdviceFactory<Advised> getInstance() {
+    public static AdviceFactory<MyAnnotationWithProvidedFactory> getInstance() {
         return instance;
     }
 
     @Override
-    public Advice newAdvice(Advised annotation) {
+    public Advice newAdvice(MyAnnotationWithProvidedFactory annotation) {
         return new MyOtherAdvice();
     }
 

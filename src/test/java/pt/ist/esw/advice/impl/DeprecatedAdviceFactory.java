@@ -31,7 +31,7 @@ import java.util.concurrent.Callable;
 import pt.ist.esw.advice.Advice;
 import pt.ist.esw.advice.AdviceFactory;
 
-public final class ClientAdviceFactory extends AdviceFactory<MyAnnotationWithDefaults> {
+public final class DeprecatedAdviceFactory extends AdviceFactory<Deprecated> {
 
     public static class MyAdvice implements Advice {
 
@@ -43,17 +43,17 @@ public final class ClientAdviceFactory extends AdviceFactory<MyAnnotationWithDef
         }
     }
 
-    private ClientAdviceFactory() {
+    private DeprecatedAdviceFactory() {
     }
 
-    private final static ClientAdviceFactory instance = new ClientAdviceFactory();
+    private final static DeprecatedAdviceFactory instance = new DeprecatedAdviceFactory();
 
-    public static AdviceFactory<MyAnnotationWithDefaults> getInstance() {
+    public static AdviceFactory<Deprecated> getInstance() {
         return instance;
     }
 
     @Override
-    public Advice newAdvice(MyAnnotationWithDefaults annotation) {
+    public Advice newAdvice(Deprecated annotation) {
         return new MyAdvice();
     }
 

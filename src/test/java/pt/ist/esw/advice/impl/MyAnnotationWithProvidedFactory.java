@@ -32,14 +32,7 @@ import java.lang.annotation.Target;
 import pt.ist.esw.advice.AdviceFactory;
 
 @Target(ElementType.METHOD)
-public @interface Advised {
+public @interface MyAnnotationWithProvidedFactory {
 
-//    boolean readOnly() default false;
-//
-//    boolean canFail() default true;
-//
-//    boolean speculativeReadOnly() default true;
-
-//
-    Class<? extends AdviceFactory<Advised>> adviceFactory() default AdvisedAdviceFactory.class;
+    Class<? extends AdviceFactory<MyAnnotationWithProvidedFactory>> adviceFactory() default MyAnnotationAdviceFactory.class;
 }

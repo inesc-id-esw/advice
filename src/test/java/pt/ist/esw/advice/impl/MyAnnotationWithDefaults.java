@@ -26,35 +26,9 @@
  */
 package pt.ist.esw.advice.impl;
 
-import java.util.concurrent.Callable;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
 
-import pt.ist.esw.advice.Advice;
-import pt.ist.esw.advice.AdviceFactory;
-
-public final class ClientAdviceFactory extends AdviceFactory<MyAnnotationWithDefaults> {
-
-    public static class MyAdvice implements Advice {
-
-        @Override
-        public <V> V perform(Callable<V> method) throws Exception {
-            method.call();
-            return method.call();
-
-        }
-    }
-
-    private ClientAdviceFactory() {
-    }
-
-    private final static ClientAdviceFactory instance = new ClientAdviceFactory();
-
-    public static AdviceFactory<MyAnnotationWithDefaults> getInstance() {
-        return instance;
-    }
-
-    @Override
-    public Advice newAdvice(MyAnnotationWithDefaults annotation) {
-        return new MyAdvice();
-    }
-
+@Target(ElementType.METHOD)
+public @interface MyAnnotationWithDefaults {
 }

@@ -62,16 +62,16 @@ public class ProcessAnnotations {
     private final Map<String, Object> defaultAnnotationElements;
     private final List<FieldNode> annotationFields;
     private final String annotationInstanceCtorDesc;
-    private final Class<? extends Annotation> annotationClass;
+    private final ProgramArgs args;
 
-    public ProcessAnnotations(Class<? extends Annotation> annotationClass) {
-        this.annotationClass = annotationClass;
-        annotation = Type.getType(annotationClass);
+    public ProcessAnnotations(ProgramArgs args) {
+        this.args = args;
+        annotation = Type.getType(args.annotationClass);
         annotationInstance =
-                Type.getObjectType(GenerateAnnotationInstance.getAnnotationInstanceName(annotationClass));
+                Type.getObjectType(GenerateAnnotationInstance.getAnnotationInstanceName(args.annotationClass));
 
         Map<String, Object> annotationElements = new HashMap<String, Object>();
-        for (java.lang.reflect.Method element : annotationClass.getDeclaredMethods()) {
+        for (java.lang.reflect.Method element : args.annotationClass.getDeclaredMethods()) {
             if (element.getReturnType().isArray()) {
                 throw new Error("FIXME: Annotations containing arrays are not yet supported");
             }
@@ -105,12 +105,7 @@ public class ProcessAnnotations {
     }
 
     public static void main(final String args[]) throws Exception {
-        if (args.length < 1) {
-            System.err.println("Syntax: GenerateAnnotationInstance <annotation-class> [class files or dirs]");
-            System.exit(-1);
-        }
-        Class<? extends Annotation> annotationClass = Class.forName(args[0]).asSubclass(Annotation.class);
-        ProcessAnnotations processor = new ProcessAnnotations(annotationClass);
+        ProcessAnnotations processor = new ProcessAnnotations(new ProgramArgs(args));
         for (int i = 1; i < args.length; i++) {
             processor.processFile(new File(args[i]));
         }
@@ -257,7 +252,7 @@ public class ProcessAnnotations {
          * annotation.
          **/
         private List<AnnotationNode> getAnnotations(MethodNode mn) {
-            Retention retAnnot = annotationClass.getAnnotation(Retention.class);
+            Retention retAnnot = args.annotationClass.getAnnotation(Retention.class);
             RetentionPolicy policy = retAnnot == null ? RetentionPolicy.CLASS : retAnnot.value();
             List<AnnotationNode> list = policy == RetentionPolicy.CLASS ?
                     mn.invisibleAnnotations : mn.visibleAnnotations;
@@ -327,10 +322,14 @@ public class ProcessAnnotations {
                 }
             }
 
-            // Decide whether the annotation defines its own AdviceFactory and, if so, use that.  Otherwise use the default
+            // Decide whether the annotation defines its own AdviceFactory and, if so, use that.  Otherwise, use either the
+            // factory specified in this program's execution parameters or the default factory.
             Type factoryType = (Type) annotationElements.get("adviceFactory");
             if (factoryType == null) {
-                factoryType = Type.getObjectType(AdviceFactory.DEFAULT_ADVICE_FACTORY.replace('.', '/'));
+                factoryType = Type
+                        .getObjectType((args.annotationFactoryClass != null ? args.annotationFactoryClass.getCanonicalName()
+                                : AdviceFactory.DEFAULT_ADVICE_FACTORY)
+                                .replace('.', '/'));
             }
 
             advisedClInit.visitMethodInsn(INVOKESTATIC, factoryType.getInternalName(), "getInstance",
@@ -597,4 +596,72 @@ public class ProcessAnnotations {
         }
     }
 
+    // smf: Shamelessly adapted from CompilerArgs in Fenix Framework's DML compiler
+    static class ProgramArgs {
+        Class<? extends Annotation> annotationClass;
+        Class<? extends AdviceFactory> annotationFactoryClass;
+        List<File> fileList = new ArrayList<File>();
+
+        public ProgramArgs(String[] args) throws Exception {
+            if (args.length < 3) {
+                error("wrong syntax");
+            }
+            processCommandLineArgs(args);
+            checkArguments();
+        }
+
+        void checkArguments() {
+            if (annotationClass == null) {
+                error("annotation class is not specified");
+            }
+            if (annotationFactoryClass == null) {
+                message("no factory class specified: using defaults");
+            }
+            if (fileList.isEmpty()) {
+                error("no class files or dirs specified");
+            }
+        }
+
+        void processCommandLineArgs(String[] args) throws Exception {
+            int num = 0;
+            while (num < args.length) {
+                num = processOption(args, num);
+            }
+        }
+
+        int processOption(String[] args, int pos) throws Exception {
+            if (args[pos].equals("-a")) {
+                annotationClass = Class.forName(getNextArgument(args, pos)).asSubclass(Annotation.class);
+                return pos + 2;
+            } else if (args[pos].equals("-f")) {
+                annotationFactoryClass = Class.forName(getNextArgument(args, pos)).asSubclass(AdviceFactory.class);
+                return pos + 2;
+            } else {
+                fileList.add(new File(args[pos]));
+                return pos + 1;
+            }
+        }
+
+        String getNextArgument(String[] args, int pos) {
+            int nextPos = pos + 1;
+            if (nextPos < args.length) {
+                return args[nextPos];
+            } else {
+                error("option " + args[pos] + " requires argument");
+            }
+            return null;
+        }
+
+        void error(String msg) {
+            System.err.println("ProcessAnnotations: " + msg);
+            System.err.println("Syntax: ProcessAnnotations -a <annotation-class> [-f <advice-factory-class>] [class files or dirs]");
+            System.exit(1);
+        }
+
+        void message(String msg) {
+            System.out.println("ProcessAnnotations: " + msg);
+        }
+
+    }
+    
 }

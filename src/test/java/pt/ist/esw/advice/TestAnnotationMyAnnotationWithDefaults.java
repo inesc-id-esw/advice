@@ -31,12 +31,12 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.Test;
 
-import pt.ist.esw.advice.impl.Advised;
+import pt.ist.esw.advice.impl.MyAnnotationWithDefaults;
 
 /**
- *
+ * When running ProcessAnnotations do not use the -f switch
  */
-public class TestAdvice {
+public class TestAnnotationMyAnnotationWithDefaults {
 
     public int i;
 
@@ -63,8 +63,7 @@ public class TestAdvice {
         assertEquals(4, i);
     }
 
-    @Advised
-    @Deprecated
+    @MyAnnotationWithDefaults
     private void inc() {
         i++;
     }
