@@ -49,7 +49,7 @@ To use this library, put this in your maven project.
         <dependency>
             <groupId>pt.ist.esw</groupId>
             <artifactId>advice</artifactId>
-            <version>1.2</version>
+            <version>1.3</version>
         </dependency>
     </dependencies>
     
@@ -99,8 +99,10 @@ your POM.
                 <configuration>
                     <mainClass>pt.ist.esw.advice.ProcessAnnotations</mainClass>
                     <arguments>
+                        <argument>-a</argument>
                         <argument>${annotation.name}</argument>
-                        <argument>${advice.factory.class}</argument>
+                        <argument>-f</argument>
+                        <argument>${advice.factory.name}</argument>
                         <argument>${project.build.outputDirectory}</argument>
                     </arguments>
                 </configuration>
@@ -111,10 +113,23 @@ your POM.
 Replace `${annotation.name}` the name fully-qualified class name of your
 annotation.
 
-Replace `${advice.factory.class}` the name fully-qualified class name of your
-`AdviceFactory`.  If the `${advice.factory.class}` is not provided or if the
-provided class cannot be found, them the annotation processor will look for
-the default `pt.ist.esw.advice.impl.ClientAdviceFactory`.
+Replace `${advice.factory.name}` the fully-qualified class name of your
+`AdviceFactory`.  This is an optional parameter.  It should be absent when
+either:
+
+  * The default factory is provided: `pt.ist.esw.advice.impl.ClientAdviceFactory`
+
+  * The annotation itself defines the following property: `Class<? extends
+  AdviceFactory<T>> adviceFactory()` where `T` is the annotation's type.
+
+
+The annotation processor will lookup the required factory in the following
+order:
+
+  1. The `adviseFactory()` property
+  2. The class provided in the argument `-f`
+  3. The default `ClientAdviceFactory`
+
 
 # Contact
 
