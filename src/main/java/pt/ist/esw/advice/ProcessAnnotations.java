@@ -597,11 +597,17 @@ public class ProcessAnnotations {
     }
 
     // smf: Shamelessly adapted from CompilerArgs in Fenix Framework's DML compiler
-    static class ProgramArgs {
+    public static class ProgramArgs {
         Class<? extends Annotation> annotationClass;
         Class<? extends AdviceFactory> annotationFactoryClass;
         List<File> fileList = new ArrayList<File>();
 
+        public ProgramArgs(Class<? extends Annotation> annotationClass, Class<? extends AdviceFactory> annotationFactoryClass, List<File> fileList) {
+            this.annotationClass = annotationClass;
+            this.annotationFactoryClass = annotationFactoryClass;
+            this.fileList = fileList;
+        }
+        
         public ProgramArgs(String[] args) throws Exception {
             if (args.length < 3) {
                 error("wrong syntax");
