@@ -49,7 +49,7 @@ To use this library, put this in your maven project.
         <dependency>
             <groupId>pt.ist.esw</groupId>
             <artifactId>advice</artifactId>
-            <version>1.3</version>
+            <version>1.4</version>
         </dependency>
     </dependencies>
     
