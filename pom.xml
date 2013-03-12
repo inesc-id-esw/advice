@@ -199,6 +199,8 @@
 
          Within the ${project.artifactId}-pages dir, there should be a
          maven-repo subdir.
+
+         then just run `mvn clean deploy` in the checkout you wish to deploy :-)
     -->
 
     <distributionManagement>
