@@ -23,5 +23,8 @@ advice and:
   the execution of the Advice (in the `perform` method).
   
 
+For more information please see the
+[project's web page](http://inesc-id-esw.github.com/advice/)
+
 Advice is distributed under the terms of the GNU LGPLv3; see the COPYING and
 COPYING.LESSER files for more details.
