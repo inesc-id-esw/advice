@@ -6,7 +6,7 @@ layout: page
 
 ## Maven Repository
 
-Maven repository top level directory is [here](maven-repo/).
+Maven repository top-level directory is [here](maven-repo/).
 
 To use software from this repository in your Maven projects, add the following
 configuration to the appropriate section in either your project's `pom.xml`
@@ -48,8 +48,8 @@ To use this library, put this in your maven project.
     <dependencies>
         <dependency>
             <groupId>pt.ist.esw</groupId>
-            <artifactId>advice</artifactId>
-            <version>1.5</version>
+            <artifactId>advice-program</artifactId>
+            <version>1.7</version>
         </dependency>
     </dependencies>
     
@@ -129,6 +129,19 @@ order:
   1. The `adviseFactory()` property
   2. The class provided in the argument `-f`
   3. The default `ClientAdviceFactory`
+
+At runtime the code that had the processed annotation will depend on it the
+Advice lib.  To depend only on the minimum set of classes you can change your
+runtime dependencies down to `advice-runtime`, which includes less
+dependencies than `advice-program`. E.g.:
+
+    <dependencies>
+        <dependency>
+            <groupId>pt.ist.esw</groupId>
+            <artifactId>advice-runtime</artifactId>
+            <version>1.7</version>
+        </dependency>
+    </dependencies>
 
 
 # Contact
