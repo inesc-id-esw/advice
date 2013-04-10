@@ -19,6 +19,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         
+        <project.deploy.maven-repo>file:///${basedir}/../../advice-pages/maven-repo</project.deploy.maven-repo>
+
         <version.asm>4.0</version.asm>
         <version.junit>4.11</version.junit>
         <version.maven.exec-plugin>1.2.1</version.maven.exec-plugin>
@@ -67,30 +69,31 @@
         </plugins>
     </build>
 
-
     <!--
         note: making a release of this software on GitHub's gh-pages branch
-        requires an existing clone of such branch in a sibling directory named
-        '${project.artifactId}-pages', like this:
+        requires an existing clone of such branch in another directory in your
+        computer, and then to configure the property
+        ${project.deploy.maven-repo} to point to the maven repository within
+        such location. E.g.:
 
-             * ${project.artifactId}
+             .
+             |__ advice
+             |   \__ ...
+             |__ advice-pages
+                 |__ ...
+                 \__ maven-repo
 
-             * ${project.artifactId}-pages
-
-         Within the ${project.artifactId}-pages dir, there should be a
-         maven-repo subdir.
-
-         then just run `mvn clean deploy` in the checkout you wish to deploy :-)
+         Then just run `mvn clean deploy` in the checkout you wish to deploy :-)
     -->
 
     <distributionManagement>
         <repository>
             <id>gh-pages</id>
-            <url>file:///${basedir}/../${project.artifactId}-pages/maven-repo/</url>
+            <url>${project.deploy.maven-repo}</url>
         </repository>
         <snapshotRepository>
             <id>gh-pages</id>
-            <url>file:///${basedir}/../${project.artifactId}-pages/maven-repo/</url>
+            <url>${project.deploy.maven-repo}</url>
         </snapshotRepository>
     </distributionManagement>
 
