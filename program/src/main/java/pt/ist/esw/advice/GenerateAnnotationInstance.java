@@ -43,8 +43,6 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
 public final class GenerateAnnotationInstance {
-    private static final String ANNOTATION_INSTANCE_PACKAGE = GenerateAnnotationInstance.class.getPackage().getName().replace('.', '/') + "/";
-
     private final String annotation;
     private final String annotationInstance;
 
@@ -133,7 +131,8 @@ public final class GenerateAnnotationInstance {
         // Write Class
         FileOutputStream fos = null;
         try {
-            File parentDir = new File(buildDir, ANNOTATION_INSTANCE_PACKAGE.replace('/', separatorChar));
+            String instancePath = annotationInstance.substring(0, annotationInstance.lastIndexOf('/')+1).replace('/', separatorChar);
+            File parentDir = new File(buildDir, instancePath);
             if (!parentDir.exists() && !parentDir.mkdirs()) {
                 throw new IOException("Could not create required directory: " + parentDir);
             }
@@ -157,7 +156,7 @@ public final class GenerateAnnotationInstance {
     }
 
     protected static String getAnnotationInstanceName(Class<? extends Annotation> annotationClass) {
-        return ANNOTATION_INSTANCE_PACKAGE + annotationClass.getSimpleName() + "Instance";
+        return (GenerateAnnotationInstance.class.getPackage().getName() + '.' + annotationClass.getName() + "Instance").replace('.', '/');
     }
 
 }
