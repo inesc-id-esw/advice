@@ -604,20 +604,20 @@ public class ProcessAnnotations {
     // smf: Shamelessly adapted from CompilerArgs in Fenix Framework's DML compiler
     public static class ProgramArgs {
         Class<? extends Annotation> annotationClass;
-        Class<? extends AdviceFactory> annotationFactoryClass;
+        Class<? extends AdviceFactory<?>> annotationFactoryClass;
         List<File> fileList = new ArrayList<File>();
 
-        public ProgramArgs(Class<? extends Annotation> annotationClass, Class<? extends AdviceFactory> annotationFactoryClass) {
+        public ProgramArgs(Class<? extends Annotation> annotationClass, Class<? extends AdviceFactory<?>> annotationFactoryClass) {
             this.annotationClass = annotationClass;
             this.annotationFactoryClass = annotationFactoryClass;
-        }       
-            
-        public ProgramArgs(Class<? extends Annotation> annotationClass, Class<? extends AdviceFactory> annotationFactoryClass, File file) {
+        }
+
+        public ProgramArgs(Class<? extends Annotation> annotationClass, Class<? extends AdviceFactory<?>> annotationFactoryClass, File file) {
             this(annotationClass, annotationFactoryClass);
             this.fileList.add(file);
         }
-        
-        public ProgramArgs(Class<? extends Annotation> annotationClass, Class<? extends AdviceFactory> annotationFactoryClass, List<File> fileList) {
+
+        public ProgramArgs(Class<? extends Annotation> annotationClass, Class<? extends AdviceFactory<?>> annotationFactoryClass, List<File> fileList) {
             this(annotationClass, annotationFactoryClass);
             this.fileList.addAll(fileList);
         }
@@ -649,12 +649,13 @@ public class ProcessAnnotations {
             }
         }
 
+        @SuppressWarnings("unchecked")
         int processOption(String[] args, int pos) throws Exception {
             if (args[pos].equals("-a")) {
                 annotationClass = Class.forName(getNextArgument(args, pos)).asSubclass(Annotation.class);
                 return pos + 2;
             } else if (args[pos].equals("-f")) {
-                annotationFactoryClass = Class.forName(getNextArgument(args, pos)).asSubclass(AdviceFactory.class);
+                annotationFactoryClass = (Class<AdviceFactory<?>>) Class.forName(getNextArgument(args, pos)).asSubclass(AdviceFactory.class);
                 return pos + 2;
             } else {
                 fileList.add(new File(args[pos]));
