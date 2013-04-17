@@ -3,7 +3,7 @@
     
     <groupId>pt.ist.esw</groupId>
     <artifactId>advice-parent</artifactId>
-    <version>1.8</version>
+    <version>1.9-SNAPSHOT</version>
     <packaging>pom</packaging>
     
     <name>Advice via Annotation for Java (parent POM)</name>
@@ -12,7 +12,7 @@
         <connection>scm:git:git@github.com:inesc-id-esw/advice.git</connection>
         <developerConnection>scm:git:git@github.com:inesc-id-esw/advice.git</developerConnection>
         <url>http://inesc-id-esw.github.com/advice</url>
-      <tag>advice-1.8</tag>
+      <tag>HEAD</tag>
   </scm>
     
     <properties>
