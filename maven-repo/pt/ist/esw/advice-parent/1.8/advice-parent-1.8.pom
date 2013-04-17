@@ -1,0 +1,100 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    
+    <groupId>pt.ist.esw</groupId>
+    <artifactId>advice-parent</artifactId>
+    <version>1.8</version>
+    <packaging>pom</packaging>
+    
+    <name>Advice via Annotation for Java (parent POM)</name>
+
+    <scm>
+        <connection>scm:git:git@github.com:inesc-id-esw/advice.git</connection>
+        <developerConnection>scm:git:git@github.com:inesc-id-esw/advice.git</developerConnection>
+        <url>http://inesc-id-esw.github.com/advice</url>
+      <tag>advice-1.8</tag>
+  </scm>
+    
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        
+        <project.deploy.maven-repo>file:///${basedir}/../../advice-pages/maven-repo</project.deploy.maven-repo>
+
+        <version.asm>4.0</version.asm>
+        <version.junit>4.11</version.junit>
+        <version.maven.exec-plugin>1.2.1</version.maven.exec-plugin>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>pt.ist.esw</groupId>
+                <artifactId>advice-runtime</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm-debug-all</artifactId>
+                <version>${version.asm}</version>
+            </dependency>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${version.junit}</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <plugins>
+            <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>2.0.2</version>
+            <configuration>
+                <source>1.6</source>
+                <target>1.6</target>
+            </configuration>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>2.4.1</version>
+                <configuration>
+                    <pushChanges>false</pushChanges>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <!--
+        note: making a release of this software on GitHub's gh-pages branch
+        requires an existing clone of such branch in another directory in your
+        computer, and then to configure the property
+        ${project.deploy.maven-repo} to point to the maven repository within
+        such location. E.g.:
+
+             .
+             |__ advice
+             |   \__ ...
+             |__ advice-pages
+                 |__ ...
+                 \__ maven-repo
+
+         Then just run `mvn clean deploy` in the checkout you wish to deploy :-)
+    -->
+
+    <distributionManagement>
+        <repository>
+            <id>gh-pages</id>
+            <url>${project.deploy.maven-repo}</url>
+        </repository>
+        <snapshotRepository>
+            <id>gh-pages</id>
+            <url>${project.deploy.maven-repo}</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+</project>

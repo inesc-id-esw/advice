@@ -1,0 +1,168 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    
+    <parent>
+        <groupId>pt.ist.esw</groupId>
+        <artifactId>advice-parent</artifactId>
+        <!-- Perhaps in Maven 3.1 the version may be ommitted -->
+        <version>1.8</version>
+        <relativePath>../parent/pom.xml</relativePath>
+    </parent>
+
+    <artifactId>advice-program</artifactId>
+    <packaging>jar</packaging>
+    
+    <name>Advice via Annotation for Java (program)</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>pt.ist.esw</groupId>
+            <artifactId>advice-runtime</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm-debug-all</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
+    </dependencies>
+    
+    <profiles>
+        <profile> <!-- This profile enables plugins that run in the process-test-classes phase unless the maven.test.skip property is present. -->
+            <id>test-plugins</id>
+
+            <activation>
+                <property><name>!maven.test.skip</name></property>
+            </activation>
+            <build>
+                <plugins>
+
+                    <!-- Generate the Annotation Instance classes and Process
+                         Annotations after compiling tests -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>${version.maven.exec-plugin}</version>
+                        <executions>
+                            <!-- MyAnnotationWithProvidedFactory. In this
+                                 case, the annotation itself defines the
+                                 factory to use. -->
+                            <execution>
+                                <id>generate-annotation-instance-1</id>
+                                <phase>process-test-classes</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <configuration>
+                                    <classpathScope>test</classpathScope>
+                                    <mainClass>pt.ist.esw.advice.GenerateAnnotationInstance</mainClass>
+                                    <arguments>
+                                        <argument>pt.ist.esw.advice.impl.MyAnnotationWithProvidedFactory</argument>
+                                        <argument>${project.build.testOutputDirectory}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>process-annotation-1</id>
+                                <phase>process-test-classes</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <configuration>
+                                    <classpathScope>test</classpathScope>
+                                    <mainClass>pt.ist.esw.advice.ProcessAnnotations</mainClass>
+                                    <arguments>
+                                        <argument>-a</argument>
+                                        <argument>pt.ist.esw.advice.impl.MyAnnotationWithProvidedFactory</argument>
+                                        <argument>${project.build.testOutputDirectory}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+
+                            <!-- Deprecated annotation.  In this case the
+                                 annotation does not define a factory, and we
+                                 name the factory to use. -->
+                            <execution>
+                                <id>generate-annotation-instance-2</id>
+                                <phase>process-test-classes</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <configuration>
+                                    <classpathScope>test</classpathScope>
+                                    <mainClass>pt.ist.esw.advice.GenerateAnnotationInstance</mainClass>
+                                    <arguments>
+                                        <argument>java.lang.Deprecated</argument>
+                                        <argument>${project.build.testOutputDirectory}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>process-annotation-2</id>
+                                <phase>process-test-classes</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <configuration>
+                                    <classpathScope>test</classpathScope>
+                                    <mainClass>pt.ist.esw.advice.ProcessAnnotations</mainClass>
+                                    <arguments>
+                                        <argument>-a</argument>
+                                        <argument>java.lang.Deprecated</argument>
+                                        <argument>-f</argument>
+                                        <argument>pt.ist.esw.advice.impl.DeprecatedAdviceFactory</argument>
+                                        <argument>${project.build.testOutputDirectory}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+
+                            <!-- MyAnnotationWithDefaults annotation.  In this
+                                 case the annotation does not define a
+                                 factory, and we name the factory to use (we
+                                 just happened to use the default name that is
+                                 used if none is specified neither in the
+                                 annotation nor in the command line:
+                                 pt.ist.esw.advice.impl.ClientAdviceFactory. -->
+                            <execution>
+                                <id>generate-annotation-instance-3</id>
+                                <phase>process-test-classes</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <configuration>
+                                    <classpathScope>test</classpathScope>
+                                    <mainClass>pt.ist.esw.advice.GenerateAnnotationInstance</mainClass>
+                                    <arguments>
+                                        <argument>pt.ist.esw.advice.impl.MyAnnotationWithDefaults</argument>
+                                        <argument>${project.build.testOutputDirectory}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>process-annotation-3</id>
+                                <phase>process-test-classes</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <configuration>
+                                    <classpathScope>test</classpathScope>
+                                    <mainClass>pt.ist.esw.advice.ProcessAnnotations</mainClass>
+                                    <arguments>
+                                        <argument>-a</argument>
+                                        <argument>pt.ist.esw.advice.impl.MyAnnotationWithDefaults</argument>
+                                        <argument>${project.build.testOutputDirectory}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+
+                        </executions>
+                    </plugin>
+
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+</project>
